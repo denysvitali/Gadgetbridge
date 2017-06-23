@@ -1,3 +1,20 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer, Daniele
+    Gobbetti, Uwe Hermann, Yar
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.util;
 
 import android.app.Activity;
@@ -26,7 +43,7 @@ import java.nio.ByteOrder;
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.GBEnvironment;
 import nodomain.freeyourgadget.gadgetbridge.R;
-import nodomain.freeyourgadget.gadgetbridge.activities.ControlCenter;
+import nodomain.freeyourgadget.gadgetbridge.activities.ControlCenterv2;
 import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEventScreenshot;
 
 public class GB {
@@ -43,13 +60,9 @@ public class GB {
     public static final String DISPLAY_MESSAGE_MESSAGE = "message";
     public static final String DISPLAY_MESSAGE_DURATION = "duration";
     public static final String DISPLAY_MESSAGE_SEVERITY = "severity";
-    public static GBEnvironment environment;
 
     public static Notification createNotification(String text, boolean connected, Context context) {
-        if (env().isLocalTest()) {
-            return null;
-        }
-        Intent notificationIntent = new Intent(context, ControlCenter.class);
+        Intent notificationIntent = new Intent(context, ControlCenterv2.class);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                 | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0,
@@ -63,7 +76,7 @@ public class GB {
                 .setContentIntent(pendingIntent)
                 .setOngoing(true);
         if (GBApplication.isRunningLollipopOrLater()) {
-            builder.setVisibility(Notification.VISIBILITY_PUBLIC);
+            builder.setVisibility(NotificationCompat.VISIBILITY_PUBLIC);
         }
         if (GBApplication.minimizeNotification()) {
             builder.setPriority(Notification.PRIORITY_MIN);
@@ -210,7 +223,7 @@ public class GB {
      */
     public static void toast(final Context context, final String message, final int displayTime, final int severity, final Throwable ex) {
         log(message, severity, ex); // log immediately, not delayed
-        if (env().isLocalTest()) {
+        if (GBEnvironment.env().isLocalTest()) {
             return;
         }
         Looper mainLooper = Looper.getMainLooper();
@@ -248,14 +261,14 @@ public class GB {
 
     private static Notification createTransferNotification(String text, boolean ongoing,
                                                            int percentage, Context context) {
-        Intent notificationIntent = new Intent(context, ControlCenter.class);
+        Intent notificationIntent = new Intent(context, ControlCenterv2.class);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                 | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0,
                 notificationIntent, 0);
 
         NotificationCompat.Builder nb = new NotificationCompat.Builder(context)
-                .setVisibility(Notification.VISIBILITY_PUBLIC)
+                .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
                 .setContentTitle(context.getString(R.string.app_name))
                 .setContentText(text)
                 .setContentIntent(pendingIntent)
@@ -289,7 +302,7 @@ public class GB {
 
     private static Notification createInstallNotification(String text, boolean ongoing,
                                                           int percentage, Context context) {
-        Intent notificationIntent = new Intent(context, ControlCenter.class);
+        Intent notificationIntent = new Intent(context, ControlCenterv2.class);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                 | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0,
@@ -319,7 +332,7 @@ public class GB {
     }
 
     private static Notification createBatteryNotification(String text, String bigText, Context context) {
-        Intent notificationIntent = new Intent(context, ControlCenter.class);
+        Intent notificationIntent = new Intent(context, ControlCenterv2.class);
         notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK
                 | Intent.FLAG_ACTIVITY_CLEAR_TASK);
         PendingIntent pendingIntent = PendingIntent.getActivity(context, 0,
@@ -341,15 +354,15 @@ public class GB {
     }
 
     public static void updateBatteryNotification(String text, String bigText, Context context) {
-        if (env().isLocalTest()) {
+        if (GBEnvironment.env().isLocalTest()) {
             return;
         }
         Notification notification = createBatteryNotification(text, bigText, context);
         updateNotification(notification, NOTIFICATION_ID_LOW_BATTERY, context);
     }
 
-    public static GBEnvironment env() {
-        return environment;
+    public static void removeBatteryNotification(Context context) {
+        removeNotification(NOTIFICATION_ID_LOW_BATTERY, context);
     }
 
     public static void assertThat(boolean condition, String errorMessage) {

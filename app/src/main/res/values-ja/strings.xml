@@ -13,6 +13,12 @@
   <string name="controlcenter_delete_device">デバイスを削除</string>
   <string name="controlcenter_delete_device_name">%1$s を削除</string>
   <string name="controlcenter_delete_device_dialogmessage">これにより、デバイスと関連するデータを削除します!</string>
+  <string name="controlcenter_navigation_drawer_open">ナビゲーションドロワーを開く</string>
+  <string name="controlcenter_navigation_drawer_close">ナビゲーションドロワーを閉じる</string>
+  <string name="controlcenter_snackbar_need_longpress">カードを長押しすると切断します</string>
+  <string name="controlcenter_snackbar_disconnecting">切断中</string>
+  <string name="controlcenter_snackbar_connecting">接続中</string>
+  <string name="controlcenter_snackbar_requested_screenshot">デバイスのスクリーンショットを取得中</string>
   <string name="title_activity_debug">デバッグ</string>
   <!--Strings related to AppManager-->
   <string name="title_activity_appmanager">アプリ管理画面</string>
@@ -45,6 +51,7 @@
   <string name="title_activity_settings">設定</string>
   <string name="pref_header_general">一般設定</string>
   <string name="pref_title_general_autoconnectonbluetooth">Bluetoothがオンになったときにデバイスに接続</string>
+  <string name="pref_title_general_autostartonboot">自動的に開始</string>
   <string name="pref_title_general_autocreonnect">自動的に再接続</string>
   <string name="pref_title_audo_player">お好みのオーディオプレイヤー</string>
   <string name="pref_default">デフォルト</string>
@@ -77,6 +84,7 @@
   <string name="pref_title_call_privacy_mode">通話プライバシーモード</string>
   <string name="pref_call_privacy_mode_off">名前と番号を表示</string>
   <string name="pref_call_privacy_mode_name">名前は非表示、番号は表示</string>
+  <string name="pref_call_privacy_mode_number">番号は非表示、名前は表示</string>
   <string name="pref_call_privacy_mode_complete">名前と番号を非表示</string>
   <string name="pref_blacklist">アップのブラックリスト</string>
   <string name="pref_header_cannned_messages">定型のメッセージ</string>
@@ -96,8 +104,11 @@
   <string name="pref_summary_enable_outgoing_call">これを無効にすると、Pebble 2/LE は発信時に振動しなくなります</string>
   <string name="pref_title_enable_pebblekit">第三者のアンドロイドアップにアクセス権利を与える</string>
   <string name="pref_summary_enable_pebblekit">PebbleKitを使用してAndroidアプリ用の実験的なサポートを有効にします</string>
+  <string name="pref_header_pebble_timeline">Pebbleタイムライン</string>
   <string name="pref_title_sunrise_sunset">日の出と日の入り</string>
   <string name="pref_summary_sunrise_sunset">場所に基づいて、Pebble のタイムラインに日の出・日の入りの時間を送ります</string>
+  <string name="pref_title_enable_calendar_sync">カレンダーを同期</string>
+  <string name="pref_summary_enable_calendar_sync">カレンダーのイベントをタイムラインに送信します</string>
   <string name="pref_title_autoremove_notifications">消去した通知を自動削除</string>
   <string name="pref_summary_autoremove_notifications">通知は、Androidデバイスから削除されたときに、Pebbleから自動的に削除されます</string>
   <string name="pref_title_pebble_privacy_mode">プライバシーモード</string>
@@ -180,7 +191,7 @@
   <string name="miband_pairing_using_dummy_userdata">有効なユーザーデータはありません。今のところ、ダミーのユーザーデータを使用します。</string>
   <string name="miband_pairing_tap_hint">お使いのMi Bandが振動と点滅したとき、それを連続して数回タップしてください。</string>
   <string name="appinstaller_install">インストール</string>
-  <string name="discovery_connected_devices_hint">お使いのデバイスを検出可能にしてください。現在、接続されたデバイスは、おそらく検出されません。Android 6 以降では位置情報を有効にする必要があります (例 GPS)。お使いのデバイスが 2 分しても表示されない場合は、モバイルデバイスを再起動した後にもう一度試してください。</string>
+  <string name="discovery_connected_devices_hint">お使いのデバイスを検出可能にしてください。現在、接続されたデバイスは、おそらく検出されません。Android 6 以降では位置情報 (例 GPS) を有効にする必要があります。クラッシュや再起動を引き起こすため、ガジェットブリッジに対してプライバシーガードを無効にしてください。お使いのデバイスが数分しても表示されない場合は、お使いのモバイルデバイスを再起動した後にもう一度試してください。</string>
   <string name="discovery_note">注:</string>
   <string name="candidate_item_device_image">デバイスイメージ</string>
   <string name="miband_prefs_alias">名前/別名</string>
@@ -240,6 +251,8 @@
   <string name="notif_battery_low_bigtext_last_charge_time">最後の充電: %s \n</string>
   <string name="notif_battery_low_bigtext_number_of_charges">充電回数: %s</string>
   <string name="sleepchart_your_sleep">あなたの睡眠</string>
+  <string name="weeksleepchart_sleep_a_week">週の睡眠</string>
+  <string name="weeksleepchart_today_sleep_description">今日の睡眠、目標: %1$s</string>
   <string name="weekstepschart_steps_a_week">週あたり歩数</string>
   <string name="activity_sleepchart_activity_and_sleep">あなたの活動と睡眠</string>
   <string name="updating_firmware">ファームウェアの更新中…</string>
@@ -258,6 +271,8 @@
   <string name="updatefirmwareoperation_update_complete_rebooting">ファームウェアのインストールが完了しました。デバイスを再起動します…</string>
   <string name="updatefirmwareoperation_write_failed">ファームウェアの書き込みに失敗しました</string>
   <string name="chart_steps">歩数</string>
+  <string name="calories">カロリー</string>
+  <string name="distance">距離</string>
   <string name="liveactivity_live_activity">生活活動</string>
   <string name="weeksteps_today_steps_description">今日の歩数、目標: %1$s</string>
   <string name="pref_title_dont_ack_transfer">活動データ転送に応答しない</string>
@@ -307,35 +322,21 @@
   <string name="updatefirmwareoperation_firmware_not_sent">ファームウェアを送信しませんでした</string>
   <string name="charts_legend_heartrate">心拍数</string>
   <string name="live_activity_heart_rate">心拍数</string>
-  <!--Strings related to Onboading Activity-->
-  <string name="title_activity_onboarding">データベースのインポート</string>
-  <string name="import_old_db_buttonlabel">古い活動データをインポート</string>
-  <string name="import_old_db_information">ガジェットブリッジ 0.12.0 以降、新しいデータベース形式を使用しています。
-古い活動データをインポートして、(%1$s) に接続しているデバイスと関連付けすることができます。\n
-\n
-今、古い活動データをインポートしない場合でも、データベース管理で「古い活動データをマージ」ボタンをタップして、後で行うことができます\n
-\n
-Mi Band、Pebble Health、Morpheuz からデータをインポートすることはできますが、Pebble Misfit からはできませんのでご注意ください。</string>
   <string name="pref_title_pebble_health_store_raw">データベースに生のレコードを格納する</string>
   <string name="pref_summary_pebble_health_store_raw">チェックした場合、データを「そのまま」格納し、後で翻訳して利用することができます。注意: この場合データベースは大きくなります!</string>
   <string name="action_db_management">データベース管理</string>
   <string name="title_activity_db_management">データベース管理</string>
   <string name="activity_db_management_import_export_explanation">データベース操作は、お使いのデバイスで次のパスを使用します。 \nこのパスは、他の Android アプリケーションやお使いのコンピュータがアクセス可能です。\nエクスポートされたデータベースが見つかります (またはインポートしたいデータベースを配置します):</string>
-  <string name="activity_db_management_merge_old_explanation">ガジェットブリッジの 0.12 より前のバージョンで記録された活動データを新しい形式に変換する必要があります。 \n下のボタンを使用してこれを行うことができます。古い活動データと関連付けたいデバイスに接続する必要があることに注意してください! \n既にデータをインポートし、その結果に満足している場合は、古いデータベースを削除することができます。</string>
-  <string name="activity_db_management_merge_old_title">レガシー データベースのインポート / 削除</string>
+  <string name="activity_db_management_merge_old_title">レガシー データベースの削除</string>
   <string name="dbmanagementactivvity_cannot_access_export_path">エクスポート パスにアクセスできません。開発者にご連絡ください。</string>
   <string name="dbmanagementactivity_exported_to">エクスポートしました: %1$s</string>
   <string name="dbmanagementactivity_error_exporting_db">DB のエクスポート時にエラー: %1$s</string>
+  <string name="dbmanagementactivity_error_exporting_shared">設定のエクスポート時にエラー: %1$s</string>
   <string name="dbmanagementactivity_import_data_title">データをインポートしますか?</string>
   <string name="dbmanagementactivity_overwrite_database_confirmation">現在のデータベースを上書きしてもよろしいですか? 現在の活動データは (もしあれば) すべて失われます。</string>
   <string name="dbmanagementactivity_import_successful">インポートに成功しました。</string>
   <string name="dbmanagementactivity_error_importing_db">DB のインポート時にエラー: %1$s</string>
-  <string name="dbmanagementactivity_no_old_activitydatabase_found">古い活動データベースが見つかりません。インポートするものはありません。</string>
-  <string name="dbmanagementactivity_no_connected_device">古い活動データに関連付ける接続されたデバイスがありません。</string>
-  <string name="dbmanagementactivity_merging_activity_data_title">活動データのマージ中</string>
-  <string name="dbmanagementactivity_please_wait_while_merging">活動データのマージ中。しばらくお待ちください…</string>
-  <string name="dbmanagementactivity_error_importing_old_activity_data">古い活動データを新しいデータベースにインポート中にエラー。</string>
-  <string name="dbmanagementactivity_associate_old_data_with_device">古いデータをデバイスに関連付け</string>
+  <string name="dbmanagementactivity_error_importing_shared">設定のインポート時にエラー: %1$s</string>
   <string name="dbmanagementactivity_delete_activity_data_title">活動データを削除しますか?</string>
   <string name="dbmanagementactivity_really_delete_entire_db">データベース全体を削除してもよろしいですか? 活動データとお使いのデバイスに関する情報がすべて失われます。</string>
   <string name="dbmanagementactivity_database_successfully_deleted">データを正常に削除しました。</string>
@@ -360,4 +361,20 @@ Mi Band、Pebble Health、Morpheuz からデータをインポートすること
   <string name="timeformat_24h">24時間</string>
   <string name="timeformat_am_pm">AM/PM</string>
   <string name="pref_screen_notification_profile_alarm_clock">アラームクロック</string>
+  <string name="StringUtils_sender"> (%1$s)</string>
+  <string name="find_device_you_found_it">見つかりました!</string>
+  <string name="miband2_prefs_timeformat">Mi2: 時刻形式</string>
+  <string name="mi2_fw_installhandler_fw53_hint">このファームウェアをインストールする前に、バージョン %1$s をインストールする必要があります!</string>
+  <string name="mi2_enable_text_notifications">テキスト通知</string>
+  <string name="mi2_enable_text_notifications_summary"><![CDATA[ファームウェア >= 1.0.1.28 と Mili_pro.ft* をインストールしていることが必要です。]]></string>
+  <string name="off">オフ</string>
+  <string name="discovery_attempting_to_pair">%1$s とペアを試みています</string>
+  <string name="discovery_bonding_failed_immediately">%1$s との接続がすぐに失敗しました。</string>
+  <string name="discovery_trying_to_connect_to">接続の試行中: %1$s</string>
+  <string name="discovery_enable_bluetooth">デバイスを見つけるため Bluetooth を有効にします。</string>
+  <string name="discovery_successfully_bonded">%1$s と接続しました。</string>
+  <string name="discovery_pair_title">%1$sとペアにしますか?</string>
+  <string name="discovery_pair_question">お使いのデバイスとペアにする相手を選択します。 これに失敗した場合は、ペア設定をせずに再試行してください。</string>
+  <string name="discovery_yes_pair">ペア</string>
+  <string name="discovery_dont_pair">ペアにしない</string>
 </resources>

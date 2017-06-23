@@ -1,3 +1,19 @@
+/*  Copyright (C) 2015-2017 Carsten Pfeiffer
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.service.devices.miband;
 
 import android.bluetooth.BluetoothGattCharacteristic;
@@ -10,6 +26,7 @@ import nodomain.freeyourgadget.gadgetbridge.devices.miband.VibrationProfile;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.AbstractBTLEDeviceSupport;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.BtLEAction;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.TransactionBuilder;
+import nodomain.freeyourgadget.gadgetbridge.service.devices.common.SimpleNotification;
 
 public class V1NotificationStrategy implements NotificationStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(V1NotificationStrategy.class);
@@ -24,7 +41,7 @@ public class V1NotificationStrategy implements NotificationStrategy {
     }
 
     @Override
-    public void sendDefaultNotification(TransactionBuilder builder, BtLEAction extraAction) {
+    public void sendDefaultNotification(TransactionBuilder builder, SimpleNotification simpleNotification, BtLEAction extraAction) {
         BluetoothGattCharacteristic characteristic = support.getCharacteristic(MiBandService.UUID_CHARACTERISTIC_CONTROL_POINT);
         builder.write(characteristic, getDefaultNotification());
         builder.add(extraAction);
@@ -53,8 +70,8 @@ public class V1NotificationStrategy implements NotificationStrategy {
 
     /**
      * Adds a custom notification to the given transaction builder
-     *
      * @param vibrationProfile specifies how and how often the Band shall vibrate.
+     * @param simpleNotification
      * @param flashTimes
      * @param flashColour
      * @param originalColour
@@ -63,7 +80,7 @@ public class V1NotificationStrategy implements NotificationStrategy {
      * @param builder
      */
     @Override
-    public void sendCustomNotification(VibrationProfile vibrationProfile, int flashTimes, int flashColour, int originalColour, long flashDuration, BtLEAction extraAction, TransactionBuilder builder) {
+    public void sendCustomNotification(VibrationProfile vibrationProfile, SimpleNotification simpleNotification, int flashTimes, int flashColour, int originalColour, long flashDuration, BtLEAction extraAction, TransactionBuilder builder) {
         BluetoothGattCharacteristic controlPoint = support.getCharacteristic(MiBandService.UUID_CHARACTERISTIC_CONTROL_POINT);
         for (short i = 0; i < vibrationProfile.getRepeat(); i++) {
             int[] onOffSequence = vibrationProfile.getOnOffSequence();
@@ -84,6 +101,12 @@ public class V1NotificationStrategy implements NotificationStrategy {
                 }
             }
         }
+    }
+
+    @Override
+    public void stopCurrentNotification(TransactionBuilder builder) {
+        BluetoothGattCharacteristic controlPoint = support.getCharacteristic(MiBandService.UUID_CHARACTERISTIC_CONTROL_POINT);
+        builder.write(controlPoint, stopVibrate);
     }
 
 //    private void sendCustomNotification(int vibrateDuration, int vibrateTimes, int pause, int flashTimes, int flashColour, int originalColour, long flashDuration, TransactionBuilder builder) {

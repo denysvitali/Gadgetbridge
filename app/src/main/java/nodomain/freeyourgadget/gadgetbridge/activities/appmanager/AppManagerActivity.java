@@ -1,3 +1,20 @@
+/*  Copyright (C) 2016-2017 Andreas Shimokawa, Carsten Pfeiffer, Daniele
+    Gobbetti
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities.appmanager;
 
 import android.app.Activity;
@@ -160,14 +177,11 @@ public class AppManagerActivity extends AbstractGBFragmentActivity {
 
 
     static synchronized void rewriteAppOrderFile(String filename, List<UUID> uuids) {
-        try {
-            FileWriter fileWriter = new FileWriter(FileUtils.getExternalFilesDir() + "/" + filename);
-            BufferedWriter out = new BufferedWriter(fileWriter);
+        try (BufferedWriter out = new BufferedWriter(new FileWriter(FileUtils.getExternalFilesDir() + "/" + filename))) {
             for (UUID uuid : uuids) {
                 out.write(uuid.toString());
                 out.newLine();
             }
-            out.close();
         } catch (IOException e) {
             LOG.warn("can't write app order to file!");
         }
@@ -183,9 +197,7 @@ public class AppManagerActivity extends AbstractGBFragmentActivity {
 
     static synchronized ArrayList<UUID> getUuidsFromFile(String filename) {
         ArrayList<UUID> uuids = new ArrayList<>();
-        try {
-            FileReader fileReader = new FileReader(FileUtils.getExternalFilesDir() + "/" + filename);
-            BufferedReader in = new BufferedReader(fileReader);
+        try (BufferedReader in = new BufferedReader(new FileReader(FileUtils.getExternalFilesDir() + "/" + filename))) {
             String line;
             while ((line = in.readLine()) != null) {
                 uuids.add(UUID.fromString(line));

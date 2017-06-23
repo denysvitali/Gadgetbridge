@@ -1,3 +1,19 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.util;
 
 import android.text.format.DateUtils;
@@ -38,7 +54,7 @@ public class DateTimeUtils {
         DurationFormatter df = DurationFormatter.Builder.SYMBOLS
                 .maximum(TimeUnit.DAYS)
                 .minimum(TimeUnit.MINUTES)
-                .suppressZeros(DurationFormatter.SuppressZeros.LEADING)
+                .suppressZeros(DurationFormatter.SuppressZeros.LEADING, DurationFormatter.SuppressZeros.TRAILING)
                 .maximumAmountOfUnitsToShow(2)
                 .build();
         return df.format(duration, unit);
@@ -77,5 +93,9 @@ public class DateTimeUtils {
 
     public static Calendar getCalendarUTC() {
         return GregorianCalendar.getInstance(TimeZone.getTimeZone("UTC"));
+    }
+
+    public static String minutesToHHMM(int minutes) {
+        return String.format(Locale.US, "%d:%02d", minutes / 60, minutes % 60); // no I do not want to use durationformatter :P
     }
 }

@@ -1,3 +1,20 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer, Daniele
+    Gobbetti, Julien Pivotto, Uwe Hermann
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.service.devices.pebble;
 
 import android.bluetooth.BluetoothAdapter;
@@ -33,6 +50,7 @@ import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEventAppInfo;
 import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEventAppManagement;
 import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEventAppMessage;
 import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEventVersionInfo;
+import nodomain.freeyourgadget.gadgetbridge.deviceevents.pebble.GBDeviceEventDataLogging;
 import nodomain.freeyourgadget.gadgetbridge.devices.pebble.PBWReader;
 import nodomain.freeyourgadget.gadgetbridge.devices.pebble.PebbleInstallable;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
@@ -86,6 +104,7 @@ class PebbleIoThread extends GBDeviceIoThread {
         mPebbleSupport = pebbleSupport;
         mEnablePebblekit = prefs.getBoolean("pebble_enable_pebblekit", false);
         mPebbleProtocol.setAlwaysACKPebbleKit(prefs.getBoolean("pebble_always_ack_pebblekit", false));
+        mPebbleProtocol.setEnablePebbleKit(mEnablePebblekit);
     }
 
     private int readWithException(InputStream inputStream, byte[] buffer, int byteOffset, int byteCount) throws IOException {
@@ -491,6 +510,13 @@ class PebbleIoThread extends GBDeviceIoThread {
                 LOG.info("Got AppMessage event");
                 if (mPebbleKitSupport != null) {
                     mPebbleKitSupport.sendAppMessageIntent((GBDeviceEventAppMessage) deviceEvent);
+                }
+            }
+        } else if (deviceEvent instanceof GBDeviceEventDataLogging) {
+            if (mEnablePebblekit) {
+                LOG.info("Got Datalogging event");
+                if (mPebbleKitSupport != null) {
+                    mPebbleKitSupport.sendDataLoggingIntent((GBDeviceEventDataLogging) deviceEvent);
                 }
             }
         }

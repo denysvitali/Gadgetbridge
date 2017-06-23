@@ -1,3 +1,20 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer, Daniele
+    Gobbetti, João Paulo Barraca
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.devices;
 
 import android.support.annotation.NonNull;
@@ -17,24 +34,10 @@ import nodomain.freeyourgadget.gadgetbridge.entities.AbstractActivitySample;
  * @param <T> the device/provider specific sample type (must extend AbstractActivitySample)
  */
 public interface SampleProvider<T extends AbstractActivitySample> {
-    // TODO: these constants can all be removed
-    int PROVIDER_MIBAND = 0;
+    // These are only used for SharedPreferences
     int PROVIDER_PEBBLE_MORPHEUZ = 1;
-    int PROVIDER_PEBBLE_GADGETBRIDGE = 2; // removed
     int PROVIDER_PEBBLE_MISFIT = 3;
     int PROVIDER_PEBBLE_HEALTH = 4;
-    int PROVIDER_MIBAND2 = 5;
-    int PROVIDER_HPLUS = 6;
-
-    int PROVIDER_UNKNOWN = 100;
-    // TODO: can also be removed
-
-    /**
-     * Returns the "id" of this sample provider, as used in Gadgetbridge versions < 0.12.0.
-     * Only used for importing old samples.
-     * @deprecated
-     */
-    int getID();
 
     int normalizeType(int rawType);
 

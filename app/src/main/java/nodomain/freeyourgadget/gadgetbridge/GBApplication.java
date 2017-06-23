@@ -1,3 +1,20 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer, Daniele
+    Gobbetti, Normano64
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge;
 
 import android.annotation.TargetApi;
@@ -23,11 +40,11 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
-import nodomain.freeyourgadget.gadgetbridge.database.DBConstants;
 import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
 import nodomain.freeyourgadget.gadgetbridge.database.DBHelper;
 import nodomain.freeyourgadget.gadgetbridge.database.DBOpenHelper;
@@ -37,6 +54,7 @@ import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDeviceService;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivityUser;
 import nodomain.freeyourgadget.gadgetbridge.model.DeviceService;
+import nodomain.freeyourgadget.gadgetbridge.service.NotificationCollectorMonitorService;
 import nodomain.freeyourgadget.gadgetbridge.util.FileUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.GB;
 import nodomain.freeyourgadget.gadgetbridge.util.GBPrefs;
@@ -70,11 +88,18 @@ public class GBApplication extends Application {
 
     public static final String ACTION_QUIT
             = "nodomain.freeyourgadget.gadgetbridge.gbapplication.action.quit";
+
+    private static GBApplication app;
+
     private static Logging logging = new Logging() {
         @Override
         protected String createLogDirectory() throws IOException {
-            File dir = FileUtils.getExternalFilesDir();
-            return dir.getAbsolutePath();
+            if (GBEnvironment.env().isLocalTest()) {
+                return System.getProperty(Logging.PROP_LOGFILES_DIR);
+            } else {
+                File dir = FileUtils.getExternalFilesDir();
+                return dir.getAbsolutePath();
+            }
         }
     };
 
@@ -92,12 +117,17 @@ public class GBApplication extends Application {
         // don't do anything here, add it to onCreate instead
     }
 
+    public static Logging getLogging() {
+        return logging;
+    }
+
     protected DeviceService createDeviceService() {
         return new GBDeviceService(this);
     }
 
     @Override
     public void onCreate() {
+        app = this;
         super.onCreate();
 
         if (lockHandler != null) {
@@ -109,6 +139,13 @@ public class GBApplication extends Application {
         prefs = new Prefs(sharedPrefs);
         gbPrefs = new GBPrefs(prefs);
 
+        if (!GBEnvironment.isEnvironmentSetup()) {
+            GBEnvironment.setupEnvironment(GBEnvironment.createDeviceEnvironment());
+            // setup db after the environment is set up, but don't do it in test mode
+            // in test mode, it's done individually, see TestBase
+            setupDatabase();
+        }
+
         // don't do anything here before we set up logging, otherwise
         // slf4j may be implicitly initialized before we properly configured it.
         setupLogging(isFileLoggingEnabled());
@@ -119,10 +156,6 @@ public class GBApplication extends Application {
 
         setupExceptionHandler();
 
-        GB.environment = GBEnvironment.createDeviceEnvironment();
-
-        setupDatabase(this);
-
         deviceManager = new DeviceManager(this);
 
         deviceService = createDeviceService();
@@ -130,6 +163,8 @@ public class GBApplication extends Application {
 
         if (isRunningMarshmallowOrLater()) {
             notificationManager = (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
+            //the following will ensure the notification manager is kept alive
+            startService(new Intent(this, NotificationCollectorMonitorService.class));
         }
     }
 
@@ -175,8 +210,14 @@ public class GBApplication extends Application {
         return prefs.getBoolean("minimize_priority", false);
     }
 
-    static void setupDatabase(Context context) {
-        DBOpenHelper helper = new DBOpenHelper(context, DATABASE_NAME, null);
+    public void setupDatabase() {
+        DaoMaster.OpenHelper helper;
+        GBEnvironment env = GBEnvironment.env();
+        if (env.isTest()) {
+            helper = new DaoMaster.DevOpenHelper(this, null, null);
+        } else {
+            helper = new DBOpenHelper(this, DATABASE_NAME, null);
+        }
         SQLiteDatabase db = helper.getWritableDatabase();
         DaoMaster daoMaster = new DaoMaster(db);
         if (lockHandler == null) {
@@ -294,33 +335,54 @@ public class GBApplication extends Application {
         return NotificationManager.INTERRUPTION_FILTER_ALL;
     }
 
-    public static HashSet<String> blacklist = null;
+    private static HashSet<String> blacklist = null;
+
+    public static boolean isBlacklisted(String packageName) {
+        if (blacklist == null) {
+            GB.log("isBlacklisted: blacklisti is null!", GB.INFO, null);
+        }
+        return blacklist != null && blacklist.contains(packageName);
+    }
+
+    public static void setBlackList(Set<String> packageNames) {
+        if (packageNames == null) {
+            GB.log("Set null blacklist", GB.INFO, null);
+            blacklist = new HashSet<>();
+        } else {
+            blacklist = new HashSet<>(packageNames);
+        }
+        GB.log("New blacklist has " + blacklist.size() + " entries", GB.INFO, null);
+        saveBlackList();
+    }
 
     private static void loadBlackList() {
-        blacklist = (HashSet<String>) sharedPrefs.getStringSet("package_blacklist", null);
+        GB.log("Loading blacklist", GB.INFO, null);
+        blacklist = (HashSet<String>) sharedPrefs.getStringSet(GBPrefs.PACKAGE_BLACKLIST, null);
         if (blacklist == null) {
             blacklist = new HashSet<>();
         }
+        GB.log("Loaded blacklist has " + blacklist.size() + " entries", GB.INFO, null);
     }
 
     private static void saveBlackList() {
+        GB.log("Saving blacklist with " + blacklist.size() + " entries", GB.INFO, null);
         SharedPreferences.Editor editor = sharedPrefs.edit();
         if (blacklist.isEmpty()) {
-            editor.putStringSet("package_blacklist", null);
+            editor.putStringSet(GBPrefs.PACKAGE_BLACKLIST, null);
         } else {
-            editor.putStringSet("package_blacklist", blacklist);
+            editor.putStringSet(GBPrefs.PACKAGE_BLACKLIST, blacklist);
         }
         editor.apply();
     }
 
     public static void addToBlacklist(String packageName) {
-        if (!blacklist.contains(packageName)) {
-            blacklist.add(packageName);
+        if (blacklist.add(packageName)) {
             saveBlackList();
         }
     }
 
     public static synchronized void removeFromBlacklist(String packageName) {
+        GB.log("Removing from blacklist: " + packageName, GB.INFO, null);
         blacklist.remove(packageName);
         saveBlackList();
     }
@@ -335,11 +397,7 @@ public class GBApplication extends Application {
         if (lockHandler != null) {
             lockHandler.closeDb();
         }
-        DBHelper dbHelper = new DBHelper(context);
-        boolean result = true;
-        if (dbHelper.existsDB(DBConstants.DATABASE_NAME)) {
-            result = getContext().deleteDatabase(DBConstants.DATABASE_NAME);
-        }
+        boolean result = deleteOldActivityDatabase(context);
         result &= getContext().deleteDatabase(DATABASE_NAME);
         return result;
     }
@@ -352,8 +410,8 @@ public class GBApplication extends Application {
     public static synchronized boolean deleteOldActivityDatabase(Context context) {
         DBHelper dbHelper = new DBHelper(context);
         boolean result = true;
-        if (dbHelper.existsDB(DBConstants.DATABASE_NAME)) {
-            result = getContext().deleteDatabase(DBConstants.DATABASE_NAME);
+        if (dbHelper.existsDB("ActivityDatabase")) {
+            result = getContext().deleteDatabase("ActivityDatabase");
         }
         return result;
     }
@@ -421,7 +479,7 @@ public class GBApplication extends Application {
     public static int getTextColor(Context context) {
         TypedValue typedValue = new TypedValue();
         Resources.Theme theme = context.getTheme();
-        theme.resolveAttribute(android.R.attr.textColor, typedValue, true);
+        theme.resolveAttribute(R.attr.textColorPrimary, typedValue, true);
         return typedValue.data;
     }
 
@@ -442,5 +500,9 @@ public class GBApplication extends Application {
 
     public DeviceManager getDeviceManager() {
         return deviceManager;
+    }
+
+    public static GBApplication app() {
+        return app;
     }
 }

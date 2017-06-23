@@ -1,4 +1,27 @@
+/*  Copyright (C) 2015-2017 Carsten Pfeiffer
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.util;
+
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class CheckSums {
     public static int getCRC8(byte[] seq) {
@@ -34,5 +57,33 @@ public class CheckSums {
         }
         crc &= 0xffff;
         return crc;
+    }
+
+    public static void main(String[] args) throws IOException {
+        if (args == null || args.length == 0) {
+            throw new IllegalArgumentException("Pass the files to be checksummed as arguments");
+        }
+        for (String name : args) {
+            try (FileInputStream in = new FileInputStream(name)) {
+                byte[] bytes = readAll(in, 1000 * 1000);
+                System.out.println(name + " : " + getCRC16(bytes));
+            }
+        }
+    }
+
+    // copy&paste of FileUtils.readAll() to have it free from Android dependencies
+    private static byte[] readAll(InputStream in, long maxLen) throws IOException {
+        ByteArrayOutputStream out = new ByteArrayOutputStream(Math.max(8192, in.available()));
+        byte[] buf = new byte[8192];
+        int read;
+        long totalRead = 0;
+        while ((read = in.read(buf)) > 0) {
+            out.write(buf, 0, read);
+            totalRead += read;
+            if (totalRead > maxLen) {
+                throw new IOException("Too much data to read into memory. Got already " + totalRead);
+            }
+        }
+        return out.toByteArray();
     }
 }

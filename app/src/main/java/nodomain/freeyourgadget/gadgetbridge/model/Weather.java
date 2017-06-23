@@ -1,3 +1,19 @@
+/*  Copyright (C) 2016-2017 Andreas Shimokawa, Daniele Gobbetti
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.model;
 
 import ru.gelin.android.weather.notification.ParcelableWeather2;
@@ -259,6 +275,35 @@ public class Weather {
                 return 3200;
 
         }
+    }
+
+    public static String mapToOpenWeatherMapIcon(int openWeatherMapCondition) {
+        //see https://openweathermap.org/weather-conditions
+        String condition = "02d"; //generic "variable" icon
+
+        if (openWeatherMapCondition >= 200 && openWeatherMapCondition < 300) {
+            condition = "11d";
+        } else if (openWeatherMapCondition >= 300 && openWeatherMapCondition < 500) {
+            condition = "09d";
+        } else if (openWeatherMapCondition >= 500 && openWeatherMapCondition < 510) {
+            condition = "10d";
+        } else if (openWeatherMapCondition >= 511 && openWeatherMapCondition < 600) {
+            condition = "09d";
+        } else if (openWeatherMapCondition >= 600 && openWeatherMapCondition < 700) {
+            condition = "13d";
+        } else if (openWeatherMapCondition >= 700 && openWeatherMapCondition < 800) {
+            condition = "50d";
+        } else if (openWeatherMapCondition == 800) {
+            condition = "01d"; //TODO: night?
+        } else if (openWeatherMapCondition == 801) {
+            condition = "02d"; //TODO: night?
+        } else if (openWeatherMapCondition == 802) {
+            condition = "03d"; //TODO: night?
+        } else if (openWeatherMapCondition == 803 || openWeatherMapCondition == 804) {
+            condition = "04d"; //TODO: night?
+        }
+
+        return condition;
     }
 
     public static int mapToOpenWeatherMapCondition(int yahooCondition) {

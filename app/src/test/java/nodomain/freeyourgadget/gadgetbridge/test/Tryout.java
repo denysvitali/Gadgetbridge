@@ -8,6 +8,7 @@ import java.util.GregorianCalendar;
 
 import nodomain.freeyourgadget.gadgetbridge.Logging;
 import nodomain.freeyourgadget.gadgetbridge.devices.miband.MiBandDateConverter;
+import nodomain.freeyourgadget.gadgetbridge.service.btle.BLETypeConversions;
 import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
 
 /**
@@ -31,4 +32,6 @@ public class Tryout extends TestBase {
         LOG.info("Calender: " + DateTimeUtils.formatDateTime(calendar.getTime()));
         Logging.logBytes(LOG, bytes);
     }
+
+
 }

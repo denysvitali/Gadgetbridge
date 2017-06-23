@@ -1,3 +1,20 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer, Daniele
+    Gobbetti, Lem Dulfo
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities.appmanager;
 
 import android.content.BroadcastReceiver;
@@ -7,18 +24,18 @@ import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v7.widget.LinearLayoutManager;
-import android.view.HapticFeedbackConstants;
+import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.PopupMenu;
-
-import com.woxthebox.draglistview.DragListView;
 
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -47,6 +64,8 @@ public abstract class AbstractAppManagerFragment extends Fragment {
             = "nodomain.freeyourgadget.gadgetbridge.appmanager.action.refresh_applist";
     private static final Logger LOG = LoggerFactory.getLogger(AbstractAppManagerFragment.class);
 
+    private ItemTouchHelper appManagementTouchHelper;
+
     protected abstract List<GBDeviceApp> getSystemAppsInCategory();
 
     protected abstract String getSortFilename();
@@ -55,9 +74,13 @@ public abstract class AbstractAppManagerFragment extends Fragment {
 
     protected abstract boolean filterApp(GBDeviceApp gbDeviceApp);
 
+    public void startDragging(RecyclerView.ViewHolder viewHolder) {
+        appManagementTouchHelper.startDrag(viewHolder);
+    }
+
     protected void onChangedAppOrder() {
         List<UUID> uuidList = new ArrayList<>();
-        for (GBDeviceApp gbDeviceApp : mGBDeviceAppAdapter.getItemList()) {
+        for (GBDeviceApp gbDeviceApp : mGBDeviceAppAdapter.getAppList()) {
             uuidList.add(gbDeviceApp.getUUID());
         }
         AppManagerActivity.rewriteAppOrderFile(getSortFilename(), uuidList);
@@ -116,7 +139,6 @@ public abstract class AbstractAppManagerFragment extends Fragment {
         }
     };
 
-    private DragListView appListView;
     protected final List<GBDeviceApp> appList = new ArrayList<>();
     private GBDeviceAppAdapter mGBDeviceAppAdapter;
     protected GBDevice mGBDevice = null;
@@ -220,10 +242,6 @@ public abstract class AbstractAppManagerFragment extends Fragment {
         super.onActivityCreated(savedInstanceState);
         mGBDevice = ((AppManagerActivity) getActivity()).getGBDevice();
 
-        if (PebbleUtils.getFwMajor(mGBDevice.getFirmwareVersion()) < 3 && !isCacheManager()) {
-            appListView.setDragEnabled(false);
-        }
-
         IntentFilter filter = new IntentFilter();
         filter.addAction(ACTION_REFRESH_APPLIST);
 
@@ -242,33 +260,35 @@ public abstract class AbstractAppManagerFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
+        final FloatingActionButton appListFab = ((FloatingActionButton) getActivity().findViewById(R.id.fab));
         View rootView = inflater.inflate(R.layout.activity_appmanager, container, false);
 
-        appListView = (DragListView) (rootView.findViewById(R.id.appListView));
-        appListView.setLayoutManager(new LinearLayoutManager(getActivity()));
-        mGBDeviceAppAdapter = new GBDeviceAppAdapter(appList, R.layout.item_with_details, R.id.item_image, this.getContext(), this);
-        appListView.setAdapter(mGBDeviceAppAdapter, false);
-        appListView.setCanDragHorizontally(false);
-        appListView.setDragListListener(new DragListView.DragListListener() {
-            @Override
-            public void onItemDragStarted(int position) {
-            }
+        RecyclerView appListView = (RecyclerView) (rootView.findViewById(R.id.appListView));
 
+        appListView.addOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
-            public void onItemDragging(int itemPosition, float x, float y) {
-            }
-
-            @Override
-            public void onItemDragEnded(int fromPosition, int toPosition) {
-                onChangedAppOrder();
+            public void onScrolled(RecyclerView recyclerView, int dx, int dy) {
+                if (dy > 0) {
+                    appListFab.hide();
+                } else if (dy < 0) {
+                    appListFab.show();
+                }
             }
         });
+        appListView.setLayoutManager(new LinearLayoutManager(getActivity()));
+        mGBDeviceAppAdapter = new GBDeviceAppAdapter(appList, R.layout.item_pebble_watchapp, this);
+        appListView.setAdapter(mGBDeviceAppAdapter);
+
+        ItemTouchHelper.Callback appItemTouchHelperCallback = new AppItemTouchHelperCallback(mGBDeviceAppAdapter);
+        appManagementTouchHelper = new ItemTouchHelper(appItemTouchHelperCallback);
+
+        appManagementTouchHelper.attachToRecyclerView(appListView);
         return rootView;
     }
 
     protected void sendOrderToDevice(String concatFilename) {
         ArrayList<UUID> uuids = new ArrayList<>();
-        for (GBDeviceApp gbDeviceApp : mGBDeviceAppAdapter.getItemList()) {
+        for (GBDeviceApp gbDeviceApp : mGBDeviceAppAdapter.getAppList()) {
             uuids.add(gbDeviceApp.getUUID());
         }
         if (concatFilename != null) {
@@ -278,11 +298,11 @@ public abstract class AbstractAppManagerFragment extends Fragment {
         GBApplication.deviceService().onAppReorder(uuids.toArray(new UUID[uuids.size()]));
     }
 
-    public boolean openPopupMenu(View view, int position) {
+    public boolean openPopupMenu(View view, GBDeviceApp deviceApp) {
         PopupMenu popupMenu = new PopupMenu(getContext(), view);
         popupMenu.getMenuInflater().inflate(R.menu.appmanager_context, popupMenu.getMenu());
         Menu menu = popupMenu.getMenu();
-        final GBDeviceApp selectedApp = appList.get(position);
+        final GBDeviceApp selectedApp = deviceApp;
 
         if (!selectedApp.isInCache()) {
             menu.removeItem(R.id.appmanager_app_reinstall);
@@ -335,12 +355,11 @@ public abstract class AbstractAppManagerFragment extends Fragment {
                                              }
         );
 
-        view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS);
         popupMenu.show();
         return true;
     }
 
-    public boolean onContextItemSelected(MenuItem item, GBDeviceApp selectedApp) {
+    private boolean onContextItemSelected(MenuItem item, GBDeviceApp selectedApp) {
         switch (item.getItemId()) {
             case R.id.appmanager_app_delete_cache:
                 String baseName;
@@ -422,5 +441,47 @@ public abstract class AbstractAppManagerFragment extends Fragment {
     public void onDestroy() {
         LocalBroadcastManager.getInstance(getContext()).unregisterReceiver(mReceiver);
         super.onDestroy();
+    }
+
+    public class AppItemTouchHelperCallback extends ItemTouchHelper.Callback {
+
+        private final GBDeviceAppAdapter gbDeviceAppAdapter;
+
+        public AppItemTouchHelperCallback(GBDeviceAppAdapter gbDeviceAppAdapter) {
+            this.gbDeviceAppAdapter = gbDeviceAppAdapter;
+        }
+
+        @Override
+        public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+            //app reordering is not possible on old firmwares
+            if (PebbleUtils.getFwMajor(mGBDevice.getFirmwareVersion()) < 3 && !isCacheManager()) {
+                return 0;
+            }
+            //we only support up and down movement and only for moving, not for swiping apps away
+            return makeMovementFlags(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0);
+        }
+
+        @Override
+        public boolean isLongPressDragEnabled() {
+            return false;
+        }
+
+        @Override
+        public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder source, RecyclerView.ViewHolder target) {
+            gbDeviceAppAdapter.onItemMove(source.getAdapterPosition(), target.getAdapterPosition());
+            return true;
+        }
+
+        @Override
+        public void onSwiped(RecyclerView.ViewHolder viewHolder, int direction) {
+            //nothing to do
+        }
+
+        @Override
+        public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder viewHolder) {
+            super.clearView(recyclerView, viewHolder);
+            onChangedAppOrder();
+        }
+
     }
 }

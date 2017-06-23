@@ -1,3 +1,20 @@
+/*  Copyright (C) 2016-2017 0nse, Andreas Shimokawa, Carsten Pfeiffer,
+    Daniele Gobbetti
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.service.devices.pebble;
 
 
@@ -11,6 +28,7 @@ import java.util.UUID;
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
 import nodomain.freeyourgadget.gadgetbridge.database.DBHelper;
+import nodomain.freeyourgadget.gadgetbridge.deviceevents.GBDeviceEvent;
 import nodomain.freeyourgadget.gadgetbridge.devices.pebble.PebbleHealthSampleProvider;
 import nodomain.freeyourgadget.gadgetbridge.entities.PebbleHealthActivitySample;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
@@ -20,17 +38,17 @@ class DatalogSessionHealthSteps extends DatalogSessionPebbleHealth {
 
     private static final Logger LOG = LoggerFactory.getLogger(DatalogSessionHealthSteps.class);
 
-    public DatalogSessionHealthSteps(byte id, UUID uuid, int tag, byte item_type, short item_size, GBDevice device) {
-        super(id, uuid, tag, item_type, item_size, device);
+    DatalogSessionHealthSteps(byte id, UUID uuid, int timestamp, int tag, byte item_type, short item_size, GBDevice device) {
+        super(id, uuid, timestamp, tag, item_type, item_size, device);
         taginfo = "(Health - steps)";
     }
 
     @Override
-    public boolean handleMessage(ByteBuffer datalogMessage, int length) {
+    public GBDeviceEvent[] handleMessage(ByteBuffer datalogMessage, int length) {
         LOG.info("DATALOG " + taginfo + GB.hexdump(datalogMessage.array(), datalogMessage.position(), length));
 
         if (!isPebbleHealthEnabled()) {
-            return false;
+            return null;
         }
 
         int timestamp;
@@ -40,7 +58,7 @@ class DatalogSessionHealthSteps extends DatalogSessionPebbleHealth {
 
         int initialPosition = datalogMessage.position();
         if (0 != (length % itemSize))
-            return false;//malformed message?
+            return null;//malformed message?
 
         int packetCount = length / itemSize;
 
@@ -51,7 +69,7 @@ class DatalogSessionHealthSteps extends DatalogSessionPebbleHealth {
             recordVersion = datalogMessage.getShort();
 
             if ((recordVersion != 5) && (recordVersion != 6) && (recordVersion != 7) && (recordVersion != 12) && (recordVersion != 13))
-                return false; //we don't know how to deal with the data TODO: this is not ideal because we will get the same message again and again since we NACK it
+                return null; //we don't know how to deal with the data TODO: this is not ideal because we will get the same message again and again since we NACK it
 
             timestamp = datalogMessage.getInt();
             datalogMessage.get(); //unknown, throw away
@@ -71,7 +89,7 @@ class DatalogSessionHealthSteps extends DatalogSessionPebbleHealth {
 
             store(stepsRecords);
         }
-        return true;//ACK by default
+        return new GBDeviceEvent[]{null};//ACK by default
     }
 
     private void store(StepsRecord[] stepsRecords) {

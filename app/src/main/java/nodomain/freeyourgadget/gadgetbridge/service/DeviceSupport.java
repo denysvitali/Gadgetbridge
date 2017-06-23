@@ -1,3 +1,19 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.service;
 
 import android.bluetooth.BluetoothAdapter;
@@ -37,6 +53,27 @@ public interface DeviceSupport extends EventHandler {
     boolean isConnected();
 
     /**
+     * Attempts an initial connection to the device, typically after the user "discovered"
+     * and connects to it for the first time. Some implementations may perform an additional
+     * initialization or application-level pairing compared to the regular {@link #connect()}.
+     * <p/>
+     * Implementations may perform the connection in a synchronous or asynchronous way.
+     * Returns true if a connection attempt was made. If the implementation is synchronous
+     * it may also return true if the connection was successfully established, however
+     * callers shall not rely on that.
+     * <p/>
+     * The actual connection state change (successful or not) will be reported via the
+     * #getDevice device as a device change Intent.
+     *
+     * Note: the default implementation {@link AbstractDeviceSupport#connectFirstTime()} just
+     * calls {@link #connect()}
+     *
+     * @see #connect()
+     * @see GBDevice#ACTION_DEVICE_CHANGED
+     */
+    boolean connectFirstTime();
+
+    /**
      * Attempts to establish a connection to the device. Implementations may perform
      * the connection in a synchronous or asynchronous way.
      * Returns true if a connection attempt was made. If the implementation is synchronous
@@ -46,6 +83,7 @@ public interface DeviceSupport extends EventHandler {
      * The actual connection state change (successful or not) will be reported via the
      * #getDevice device as a device change Intent.
      *
+     * @see #connectFirstTime()
      * @see GBDevice#ACTION_DEVICE_CHANGED
      */
     boolean connect();
@@ -75,14 +113,6 @@ public interface DeviceSupport extends EventHandler {
      * connection loss.
      */
     boolean getAutoReconnect();
-
-    /**
-     * Attempts to pair and connect this device with the gadget device. Success
-     * will be reported via a device change Intent.
-     *
-     * @see GBDevice#ACTION_DEVICE_CHANGED
-     */
-    void pair();
 
     /**
      * Returns the associated device this instance communicates with.

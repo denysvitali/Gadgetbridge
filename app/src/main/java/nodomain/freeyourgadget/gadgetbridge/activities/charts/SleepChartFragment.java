@@ -1,3 +1,20 @@
+/*  Copyright (C) 2015-2017 0nse, Andreas Shimokawa, Carsten Pfeiffer,
+    Daniele Gobbetti
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities.charts;
 
 import android.content.Context;
@@ -88,6 +105,10 @@ public class SleepChartFragment extends AbstractChartFragment {
             }
         });
         set.setColors(colors);
+        set.setValueTextColor(DESCRIPTION_COLOR);
+        set.setValueTextSize(13f);
+        set.setXValuePosition(PieDataSet.ValuePosition.OUTSIDE_SLICE);
+        set.setYValuePosition(PieDataSet.ValuePosition.OUTSIDE_SLICE);
         data.setDataSet(set);
 
         //setupLegend(pieChart);
@@ -145,6 +166,7 @@ public class SleepChartFragment extends AbstractChartFragment {
     private void setupSleepAmountChart() {
         mSleepAmountChart.setBackgroundColor(BACKGROUND_COLOR);
         mSleepAmountChart.getDescription().setTextColor(DESCRIPTION_COLOR);
+        mSleepAmountChart.setEntryLabelColor(DESCRIPTION_COLOR);
         mSleepAmountChart.getDescription().setText("");
 //        mSleepAmountChart.getDescription().setNoDataTextDescription("");
         mSleepAmountChart.setNoDataText("");

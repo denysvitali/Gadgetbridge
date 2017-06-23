@@ -1,3 +1,19 @@
+/*  Copyright (C) 2016-2017 Carsten Pfeiffer
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.util;
 
 import android.content.ContentResolver;
@@ -63,6 +79,7 @@ public class UriHelper {
      * Opens a stream to read the contents of the uri.
      * Note: the caller has to close the stream after usage.
      * Every invocation of this method will open a new stream.
+     * FIXME: make sure that every caller actually closes the returned stream!
      * @throws FileNotFoundException
      */
     @NonNull
@@ -111,27 +128,31 @@ public class UriHelper {
             if (cursor == null) {
                 throw new IOException("Unable to query metadata for: " + uri);
             }
-            if (cursor.moveToFirst()) {
-                int name_index = cursor.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME);
-                if (name_index == -1) {
-                    throw new IOException("Unable to retrieve name for: " + uri);
-                }
-                int size_index = cursor.getColumnIndex(MediaStore.MediaColumns.SIZE);
-                if (size_index == -1) {
-                    throw new IOException("Unable to retrieve size for: " + uri);
-                }
-                try {
-                    fileName = cursor.getString(name_index);
-                    if (fileName == null) {
+            try {
+                if (cursor.moveToFirst()) {
+                    int name_index = cursor.getColumnIndex(MediaStore.MediaColumns.DISPLAY_NAME);
+                    if (name_index == -1) {
                         throw new IOException("Unable to retrieve name for: " + uri);
                     }
-                    fileSize = cursor.getLong(size_index);
-                    if (fileSize < 0) {
+                    int size_index = cursor.getColumnIndex(MediaStore.MediaColumns.SIZE);
+                    if (size_index == -1) {
                         throw new IOException("Unable to retrieve size for: " + uri);
                     }
-                } catch (Exception ex) {
-                    throw new IOException("Unable to retrieve metadata for: " + uri + ": " + ex.getMessage());
+                    try {
+                        fileName = cursor.getString(name_index);
+                        if (fileName == null) {
+                            throw new IOException("Unable to retrieve name for: " + uri);
+                        }
+                        fileSize = cursor.getLong(size_index);
+                        if (fileSize < 0) {
+                            throw new IOException("Unable to retrieve size for: " + uri);
+                        }
+                    } catch (Exception ex) {
+                        throw new IOException("Unable to retrieve metadata for: " + uri + ": " + ex.getMessage());
+                    }
                 }
+            } finally {
+                cursor.close();
             }
         } else if (ContentResolver.SCHEME_FILE.equals(uriScheme)) {
             file = new File(uri.getPath());

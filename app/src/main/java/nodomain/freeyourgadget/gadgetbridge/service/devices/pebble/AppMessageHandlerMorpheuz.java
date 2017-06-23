@@ -1,3 +1,19 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.service.devices.pebble;
 
 import android.util.Pair;
@@ -12,7 +28,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Objects;
 import java.util.SimpleTimeZone;
-import java.util.TimeZone;
 import java.util.UUID;
 
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
@@ -142,9 +157,11 @@ class AppMessageHandlerMorpheuz extends AppMessageHandler {
                 int version = (int) pair.second;
                 LOG.info("got version: " + ((float) version / 10.0f));
                 ctrl_message |= CTRL_VERSION_DONE;
-            } else if (pair.first.equals(keyBase)) {// fix timestamp
-                TimeZone tz = SimpleTimeZone.getDefault();
-                recording_base_timestamp = (int) pair.second - (tz.getOffset(System.currentTimeMillis())) / 1000;
+            } else if (pair.first.equals(keyBase)) {
+                recording_base_timestamp = (int) pair.second;
+                if (mPebbleProtocol.mFwMajor < 3) {
+                    recording_base_timestamp -= SimpleTimeZone.getDefault().getOffset(recording_base_timestamp * 1000L) / 1000;
+                }
                 LOG.info("got base: " + recording_base_timestamp);
                 ctrl_message |= CTRL_SET_LAST_SENT | CTRL_DO_NEXT;
             } else if (pair.first.equals(keyAutoReset)) {

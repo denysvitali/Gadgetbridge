@@ -1,3 +1,19 @@
+/*  Copyright (C) 2017 João Paulo Barraca
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.service.devices.hplus;
 
 /*
@@ -23,19 +39,25 @@ public class HPlusDataRecordDaySlot extends HPlusDataRecord {
     /**
      * Number of steps
      */
-    public int steps;
+    public int steps = ActivitySample.NOT_MEASURED;
 
     /**
      * Number of seconds without activity (TBC)
      */
-    public int secondsInactive;
+    public int secondsInactive = ActivitySample.NOT_MEASURED;
 
     /**
      * Average Heart Rate in Beats Per Minute
      */
-    public int heartRate;
+    public int heartRate = ActivitySample.NOT_MEASURED;
 
-    public HPlusDataRecordDaySlot(byte[] data) {
+    private int age = 0;
+    /**
+     * Raw intensity calculated from calories
+     */
+    public int intensity = ActivitySample.NOT_MEASURED;
+
+    public HPlusDataRecordDaySlot(byte[] data, int age) {
         super(data, TYPE_DAY_SLOT);
 
         int a = (data[4] & 0xFF) * 256 + (data[5] & 0xFF);
@@ -61,6 +83,10 @@ public class HPlusDataRecordDaySlot extends HPlusDataRecord {
         slotTime.set(Calendar.SECOND, 0);
 
         timestamp = (int) (slotTime.getTimeInMillis() / 1000L);
+
+        this.age = age;
+
+        intensity = (int) ((100*heartRate)/(208-0.7*age));
     }
 
     public String toString(){
@@ -85,5 +111,12 @@ public class HPlusDataRecordDaySlot extends HPlusDataRecord {
         }
 
         secondsInactive += other.secondsInactive;
+
+        intensity = (int) ((100*heartRate)/(208-0.7*age));
+
+    }
+
+    public boolean isValid(){
+        return steps != 0 || secondsInactive != 0 || heartRate != -1;
     }
 }

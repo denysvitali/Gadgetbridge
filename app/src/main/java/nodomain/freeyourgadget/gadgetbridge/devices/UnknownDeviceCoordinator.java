@@ -1,3 +1,20 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer, Daniele
+    Gobbetti
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.devices;
 
 import android.app.Activity;
@@ -9,7 +26,7 @@ import android.support.annotation.Nullable;
 import java.util.List;
 
 import nodomain.freeyourgadget.gadgetbridge.GBException;
-import nodomain.freeyourgadget.gadgetbridge.activities.ControlCenter;
+import nodomain.freeyourgadget.gadgetbridge.activities.ControlCenterv2;
 import nodomain.freeyourgadget.gadgetbridge.entities.AbstractActivitySample;
 import nodomain.freeyourgadget.gadgetbridge.entities.DaoSession;
 import nodomain.freeyourgadget.gadgetbridge.entities.Device;
@@ -70,11 +87,6 @@ public class UnknownDeviceCoordinator extends AbstractDeviceCoordinator {
         public AbstractActivitySample getLatestActivitySample() {
             return null;
         }
-
-        @Override
-        public int getID() {
-            return PROVIDER_UNKNOWN;
-        }
     }
 
     public UnknownDeviceCoordinator() {
@@ -97,7 +109,7 @@ public class UnknownDeviceCoordinator extends AbstractDeviceCoordinator {
 
     @Override
     public Class<? extends Activity> getPairingActivity() {
-        return ControlCenter.class;
+        return ControlCenterv2.class;
     }
 
     @Override
@@ -146,11 +158,6 @@ public class UnknownDeviceCoordinator extends AbstractDeviceCoordinator {
     }
 
     @Override
-    public int getTapString() {
-        return 0;
-    }
-
-    @Override
     public String getManufacturer() {
         return "unknown";
     }
@@ -163,5 +170,10 @@ public class UnknownDeviceCoordinator extends AbstractDeviceCoordinator {
     @Override
     public Class<? extends Activity> getAppsManagementActivity() {
         return null;
+    }
+
+    @Override
+    public boolean supportsCalendarEvents() {
+        return false;
     }
 }

@@ -1,3 +1,19 @@
+/*  Copyright (C) 2016-2017 Carsten Pfeiffer
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.service.devices.miband2;
 
 import java.util.HashMap;
@@ -27,12 +43,31 @@ public class Mi2FirmwareInfo {
             (byte) 0xf3,
             (byte) 0xe7,
     };
+
     private static final int FW_HEADER_OFFSET = 0x150;
+
+    private static final byte[] FT_HEADER = new byte[] { // HMZK font file (*.ft, *.ft.xx)
+            0x48,
+            0x4d,
+            0x5a,
+            0x4b
+    };
 
     private static Map<Integer,String> crcToVersion = new HashMap<>();
     static {
+        // firmware
         crcToVersion.put(41899, "1.0.0.39");
+        crcToVersion.put(49197, "1.0.0.53");
+        crcToVersion.put(32450, "1.0.1.28");
+        crcToVersion.put(51770, "1.0.1.34");
+        crcToVersion.put(3929, "1.0.1.39");
+
+        // fonts
+        crcToVersion.put(45624, "Font");
+        crcToVersion.put(6377, "Font (En)");
     }
+
+    private FirmwareType firmwareType = FirmwareType.FIRMWARE;
 
     public static String toVersion(int crc16) {
         return crcToVersion.get(crc16);
@@ -51,6 +86,18 @@ public class Mi2FirmwareInfo {
         this.bytes = bytes;
         crc16 = CheckSums.getCRC16(bytes);
         firmwareVersion = crcToVersion.get(crc16);
+        firmwareType = determineFirmwareType(bytes);
+    }
+
+    private FirmwareType determineFirmwareType(byte[] bytes) {
+        if (ArrayUtils.startsWith(bytes, FT_HEADER)) {
+            return FirmwareType.FONT;
+        }
+        if (ArrayUtils.equals(bytes, FW_HEADER, FW_HEADER_OFFSET)) {
+            // TODO: this is certainly not a correct validation, but it works for now
+            return FirmwareType.FIRMWARE;
+        }
+        return FirmwareType.INVALID;
     }
 
     public boolean isGenerallyCompatibleWith(GBDevice device) {
@@ -58,8 +105,7 @@ public class Mi2FirmwareInfo {
     }
 
     public boolean isHeaderValid() {
-        // TODO: this is certainly not a correct validation, but it works for now
-        return ArrayUtils.equals(bytes, FW_HEADER, FW_HEADER_OFFSET);
+        return getFirmwareType() != FirmwareType.INVALID;
     }
 
     public void checkValid() throws IllegalArgumentException {
@@ -83,5 +129,9 @@ public class Mi2FirmwareInfo {
 
     public int getFirmwareVersion() {
         return getCrc16(); // HACK until we know how to determine the version from the fw bytes
+    }
+
+    public FirmwareType getFirmwareType() {
+        return firmwareType;
     }
 }

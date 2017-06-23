@@ -1,3 +1,20 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer, Daniele
+    Gobbetti, JohnnySun, Uwe Hermann
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.devices;
 
 import android.annotation.TargetApi;
@@ -7,6 +24,7 @@ import android.content.Context;
 import android.net.Uri;
 import android.os.Build;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import java.util.Collection;
 
@@ -28,6 +46,21 @@ import nodomain.freeyourgadget.gadgetbridge.model.DeviceType;
  */
 public interface DeviceCoordinator {
     String EXTRA_DEVICE_CANDIDATE = "nodomain.freeyourgadget.gadgetbridge.impl.GBDeviceCandidate.EXTRA_DEVICE_CANDIDATE";
+    /**
+     * Do not attempt to bond after discovery.
+     */
+    int BONDING_STYLE_NONE = 0;
+    /**
+     * Bond after discovery.
+     * This is not recommended, as there are mobile devices on which bonding does not work.
+     * Prefer to use #BONDING_STYLE_ASK instead.
+     */
+    int BONDING_STYLE_BOND = 1;
+    /**
+     * Let the user decide whether to bond or not after discovery.
+     * Prefer this over #BONDING_STYLE_BOND
+     */
+    int BONDING_STYLE_ASK = 2;
 
     /**
      * Checks whether this coordinator handles the given candidate.
@@ -83,18 +116,20 @@ public interface DeviceCoordinator {
 
     /**
      * Returns the Activity class to be started in order to perform a pairing of a
-     * given device.
+     * given device after its discovery.
      *
-     * @return
+     * @return the activity class for pairing/initial authentication, or null if none
      */
+    @Nullable
     Class<? extends Activity> getPairingActivity();
 
     /**
      * Returns the Activity class that will be used as the primary activity
      * for the given device.
      *
-     * @return
+     * @return the primary activity class, or null if none
      */
+    @Nullable
     Class<? extends Activity> getPrimaryActivity();
 
     /**
@@ -166,8 +201,6 @@ public interface DeviceCoordinator {
      */
     boolean supportsHeartRateMeasurement(GBDevice device);
 
-    int getTapString();
-
     /**
      * Returns the readable name of the manufacturer.
      */
@@ -186,4 +219,17 @@ public interface DeviceCoordinator {
      * @return
      */
     Class<? extends Activity> getAppsManagementActivity();
+
+    /**
+     * Returns how/if the given device should be bonded before connecting to it.
+     * @param device
+     */
+    int getBondingStyle(GBDevice device);
+
+    /**
+     * Indicates whether the device has some kind of calender we can sync to.
+     * Also used for generated sunrise/sunset events
+     */
+    boolean supportsCalendarEvents();
+
 }

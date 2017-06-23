@@ -1,3 +1,19 @@
+/*  Copyright (C) 2016-2017 Carsten Pfeiffer, João Paulo Barraca
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.devices.hplus;
 
 /*
@@ -63,7 +79,6 @@ public final class HPlusConstants {
     public static final byte ARG_FINDME_ON = 0x01;
     public static final byte ARG_FINDME_OFF = 0x02;
 
-    public static final byte CMD_GET_VERSION = 0x17;
     public static final byte CMD_SET_END = 0x4f;
     public static final byte CMD_SET_INCOMING_CALL_NUMBER = 0x23;
     public static final byte CMD_SET_ALLDAY_HRM = 0x35;
@@ -73,7 +88,8 @@ public final class HPlusConstants {
     public static final byte CMD_SET_SIT_INTERVAL = 0x51;
     public static final byte CMD_SET_HEARTRATE_STATE = 0x32;
 
-    //Actions to device
+    //GET messages
+    public static final byte CMD_GET_VERSION = 0x17;
     public static final byte CMD_GET_ACTIVE_DAY = 0x27;
     public static final byte CMD_GET_DAY_DATA = 0x15;
     public static final byte CMD_GET_SLEEP = 0x19;
@@ -105,6 +121,9 @@ public final class HPlusConstants {
     public static final byte DATA_DAY_SUMMARY_ALT = 0x39;
     public static final byte DATA_SLEEP = 0x1A;
     public static final byte DATA_VERSION = 0x18;
+    public static final byte DATA_VERSION1 = 0x2E;
+    public static final byte DATA_DAY_UNKNOWN = 0x52; //To be defined
+    public static final byte DATA_UNKNOWN = 0x4d;
 
     public static final String PREF_HPLUS_SCREENTIME = "hplus_screentime";
     public static final String PREF_HPLUS_ALLDAYHR = "hplus_alldayhr";
@@ -113,61 +132,63 @@ public final class HPlusConstants {
     public static final String PREF_HPLUS_WRIST = "hplus_wrist";
     public static final String PREF_HPLUS_SIT_START_TIME = "hplus_sit_start_time";
     public static final String PREF_HPLUS_SIT_END_TIME = "hplus_sit_end_time";
+    public static final String PREF_HPLUS_UNICODE = "hplus_unicode";
 
-    public static final Map<Character, Byte> transliterateMap = new HashMap<Character, Byte>(){
+    public static final Map<Character, byte[]> transliterateMap = new HashMap<Character, byte[]>(){
         {
             //These are missing
-            put('ó', new Byte((byte) 111));
-            put('Ó', new Byte((byte) 79));
-            put('í', new Byte((byte) 105));
-            put('Í', new Byte((byte) 73));
-            put('ú', new Byte((byte) 117));
-            put('Ú', new Byte((byte) 85));
+            put('ó', new byte[]{(byte) 111});
+            put('Ó', new byte[]{(byte) 79});
+            put('í', new byte[]{(byte) 105});
+            put('Í', new byte[]{(byte) 73});
+            put('ú', new byte[]{(byte) 117});
+            put('Ú', new byte[]{(byte) 85});
 
             //These mostly belong to the extended ASCII table
-            put('Ç', new Byte((byte) 128));
-            put('ü', new Byte((byte) 129));
-            put('é', new Byte((byte) 130));
-            put('â', new Byte((byte) 131));
-            put('ä', new Byte((byte) 132));
-            put('à', new Byte((byte) 133));
-            put('ã', new Byte((byte) 134));
-            put('ç', new Byte((byte) 135));
-            put('ê', new Byte((byte) 136));
-            put('ë', new Byte((byte) 137));
-            put('è', new Byte((byte) 138));
-            put('Ï', new Byte((byte) 139));
-            put('Î', new Byte((byte) 140));
-            put('Ì', new Byte((byte) 141));
-            put('Ã', new Byte((byte) 142));
-            put('Ä', new Byte((byte) 143));
-            put('É', new Byte((byte) 144));
-            put('æ', new Byte((byte) 145));
-            put('Æ', new Byte((byte) 146));
-            put('ô', new Byte((byte) 147));
-            put('ö', new Byte((byte) 148));
-            put('ò', new Byte((byte) 149));
-            put('û', new Byte((byte) 150));
-            put('ù', new Byte((byte) 151));
-            put('ÿ', new Byte((byte) 152));
-            put('Ö', new Byte((byte) 153));
-            put('Ü', new Byte((byte) 154));
-            put('¢', new Byte((byte) 155));
-            put('£', new Byte((byte) 156));
-            put('¥', new Byte((byte) 157));
-            put('ƒ', new Byte((byte) 159));
-            put('á', new Byte((byte) 160));
-            put('ñ', new Byte((byte) 164));
-            put('Ñ', new Byte((byte) 165));
-            put('ª', new Byte((byte) 166));
-            put('º', new Byte((byte) 167));
-            put('¿', new Byte((byte) 168));
-            put('¬', new Byte((byte) 170));
-            put('½', new Byte((byte) 171));
-            put('¼', new Byte((byte) 172));
-            put('¡', new Byte((byte) 173));
-            put('«', new Byte((byte) 174));
-            put('»', new Byte((byte) 175));
+            put('Ç', new byte[]{(byte) 128});
+            put('ü', new byte[]{(byte) 129});
+            put('é', new byte[]{(byte) 130});
+            put('â', new byte[]{(byte) 131});
+            put('ä', new byte[]{(byte) 132});
+            put('à', new byte[]{(byte) 133});
+            put('ã', new byte[]{(byte) 134});
+            put('ç', new byte[]{(byte) 135});
+            put('ê', new byte[]{(byte) 136});
+            put('ë', new byte[]{(byte) 137});
+            put('Ï', new byte[]{(byte) 139});
+            put('è', new byte[]{(byte) 138});
+            put('Î', new byte[]{(byte) 140});
+            put('Ì', new byte[]{(byte) 141});
+            put('Ã', new byte[]{(byte) 142});
+            put('Ä', new byte[]{(byte) 143});
+            put('É', new byte[]{(byte) 144});
+            put('æ', new byte[]{(byte) 145});
+            put('Æ', new byte[]{(byte) 146});
+            put('ô', new byte[]{(byte) 147});
+            put('ö', new byte[]{(byte) 148});
+            put('ò', new byte[]{(byte) 149});
+            put('û', new byte[]{(byte) 150});
+            put('ù', new byte[]{(byte) 151});
+            put('ÿ', new byte[]{(byte) 152});
+            put('Ö', new byte[]{(byte) 153});
+            put('Ü', new byte[]{(byte) 154});
+            put('¢', new byte[]{(byte) 155});
+            put('£', new byte[]{(byte) 156});
+            put('¥', new byte[]{(byte) 157});
+            put('ƒ', new byte[]{(byte) 159});
+            put('á', new byte[]{(byte) 160});
+            put('ñ', new byte[]{(byte) 164});
+            put('Ñ', new byte[]{(byte) 165});
+            put('ª', new byte[]{(byte) 166});
+            put('º', new byte[]{(byte) 167});
+            put('¿', new byte[]{(byte) 168});
+            put('¬', new byte[]{(byte) 170});
+            put('½', new byte[]{(byte) 171});
+            put('¼', new byte[]{(byte) 172});
+            put('¡', new byte[]{(byte) 173});
+            put('«', new byte[]{(byte) 174});
+            put('»', new byte[]{(byte) 175});
+            put('°', new byte[]{(byte) 0xa1, (byte) 0xe3});
         }
     };
 }

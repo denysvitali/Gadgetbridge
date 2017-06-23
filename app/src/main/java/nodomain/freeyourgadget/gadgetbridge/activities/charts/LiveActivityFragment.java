@@ -1,3 +1,19 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities.charts;
 
 import android.content.BroadcastReceiver;
@@ -266,13 +282,14 @@ public class LiveActivityFragment extends AbstractChartFragment {
 
     @Override
     public void onPause() {
+        enableRealtimeTracking(false);
         super.onPause();
-        stopActivityPulse();
     }
 
     @Override
     public void onResume() {
         super.onResume();
+        enableRealtimeTracking(true);
     }
 
     private ScheduledExecutorService startActivityPulse() {
@@ -329,23 +346,34 @@ public class LiveActivityFragment extends AbstractChartFragment {
 
     @Override
     protected void onMadeVisibleInActivity() {
-        GBApplication.deviceService().onEnableRealtimeSteps(true);
-        GBApplication.deviceService().onEnableRealtimeHeartRateMeasurement(true);
         super.onMadeVisibleInActivity();
-        if (getActivity() != null) {
-            getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+        enableRealtimeTracking(true);
+    }
+
+    private void enableRealtimeTracking(boolean enable) {
+        if (enable && pulseScheduler != null) {
+            // already running
+            return;
         }
-        pulseScheduler = startActivityPulse();
+
+        GBApplication.deviceService().onEnableRealtimeSteps(enable);
+        GBApplication.deviceService().onEnableRealtimeHeartRateMeasurement(enable);
+        if (enable) {
+            if (getActivity() != null) {
+                getActivity().getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            }
+            pulseScheduler = startActivityPulse();
+        } else {
+            stopActivityPulse();
+            if (getActivity() != null) {
+                getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
+            }
+        }
     }
 
     @Override
     protected void onMadeInvisibleInActivity() {
-        stopActivityPulse();
-        GBApplication.deviceService().onEnableRealtimeSteps(false);
-        GBApplication.deviceService().onEnableRealtimeHeartRateMeasurement(false);
-        if (getActivity() != null) {
-            getActivity().getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
-        }
+        enableRealtimeTracking(false);
         super.onMadeInvisibleInActivity();
     }
 

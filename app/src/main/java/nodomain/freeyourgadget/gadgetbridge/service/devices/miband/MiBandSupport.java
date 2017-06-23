@@ -1,9 +1,28 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, atkyritsis, Carsten Pfeiffer,
+    Christian Fischer, Daniele Gobbetti, JohnnySun, Julien Pivotto, Kasha,
+    Sergey Trofimov, Steffen Liebergeld
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.service.devices.miband;
 
 import android.bluetooth.BluetoothGatt;
 import android.bluetooth.BluetoothGattCharacteristic;
 import android.content.Intent;
 import android.net.Uri;
+import android.support.annotation.Nullable;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.Toast;
 
@@ -41,6 +60,7 @@ import nodomain.freeyourgadget.gadgetbridge.impl.GBAlarm;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice.State;
 import nodomain.freeyourgadget.gadgetbridge.model.ActivitySample;
+import nodomain.freeyourgadget.gadgetbridge.model.ActivityUser;
 import nodomain.freeyourgadget.gadgetbridge.model.Alarm;
 import nodomain.freeyourgadget.gadgetbridge.model.CalendarEventSpec;
 import nodomain.freeyourgadget.gadgetbridge.model.CalendarEvents;
@@ -53,6 +73,7 @@ import nodomain.freeyourgadget.gadgetbridge.model.NotificationSpec;
 import nodomain.freeyourgadget.gadgetbridge.model.NotificationType;
 import nodomain.freeyourgadget.gadgetbridge.model.WeatherSpec;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.AbstractBTLEDeviceSupport;
+import nodomain.freeyourgadget.gadgetbridge.service.btle.BLETypeConversions;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.BtLEAction;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.GattCharacteristic;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.GattService;
@@ -61,10 +82,13 @@ import nodomain.freeyourgadget.gadgetbridge.service.btle.actions.AbortTransactio
 import nodomain.freeyourgadget.gadgetbridge.service.btle.actions.ConditionalWriteAction;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.actions.SetDeviceStateAction;
 import nodomain.freeyourgadget.gadgetbridge.service.btle.actions.WriteAction;
+import nodomain.freeyourgadget.gadgetbridge.service.btle.profiles.alertnotification.AlertCategory;
+import nodomain.freeyourgadget.gadgetbridge.service.devices.common.SimpleNotification;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.miband.operations.FetchActivityOperation;
 import nodomain.freeyourgadget.gadgetbridge.service.devices.miband.operations.UpdateFirmwareOperation;
 import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.GB;
+import nodomain.freeyourgadget.gadgetbridge.util.NotificationUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.Prefs;
 
 import static nodomain.freeyourgadget.gadgetbridge.devices.miband.MiBandConst.DEFAULT_VALUE_FLASH_COLOUR;
@@ -193,31 +217,32 @@ public class MiBandSupport extends AbstractBTLEDeviceSupport {
     }
 
     @Override
-    public void pair() {
+    public boolean connectFirstTime() {
         for (int i = 0; i < 5; i++) {
             if (connect()) {
-                return;
+                return true;
             }
         }
+        return false;
     }
 
     public DeviceInfo getDeviceInfo() {
         return mDeviceInfo;
     }
 
-    private MiBandSupport sendDefaultNotification(TransactionBuilder builder, short repeat, BtLEAction extraAction) {
+    private MiBandSupport sendDefaultNotification(TransactionBuilder builder, SimpleNotification simpleNotification, short repeat, BtLEAction extraAction) {
         LOG.info("Sending notification to MiBand: (" + repeat + " times)");
         NotificationStrategy strategy = getNotificationStrategy();
         for (short i = 0; i < repeat; i++) {
-            strategy.sendDefaultNotification(builder, extraAction);
+            strategy.sendDefaultNotification(builder, simpleNotification, extraAction);
         }
         return this;
     }
 
     /**
      * Adds a custom notification to the given transaction builder
-     *
-     * @param vibrationProfile specifies how and how often the Band shall vibrate.
+     *  @param vibrationProfile specifies how and how often the Band shall vibrate.
+     * @param simpleNotification
      * @param flashTimes
      * @param flashColour
      * @param originalColour
@@ -225,8 +250,8 @@ public class MiBandSupport extends AbstractBTLEDeviceSupport {
      * @param extraAction      an extra action to be executed after every vibration and flash sequence. Allows to abort the repetition, for example.
      * @param builder
      */
-    private MiBandSupport sendCustomNotification(VibrationProfile vibrationProfile, int flashTimes, int flashColour, int originalColour, long flashDuration, BtLEAction extraAction, TransactionBuilder builder) {
-        getNotificationStrategy().sendCustomNotification(vibrationProfile, flashTimes, flashColour, originalColour, flashDuration, extraAction, builder);
+    private MiBandSupport sendCustomNotification(VibrationProfile vibrationProfile, @Nullable SimpleNotification simpleNotification, int flashTimes, int flashColour, int originalColour, long flashDuration, BtLEAction extraAction, TransactionBuilder builder) {
+        getNotificationStrategy().sendCustomNotification(vibrationProfile, simpleNotification, flashTimes, flashColour, originalColour, flashDuration, extraAction, builder);
         LOG.info("Sending notification to MiBand");
         return this;
     }
@@ -364,7 +389,7 @@ public class MiBandSupport extends AbstractBTLEDeviceSupport {
         LOG.info("Attempting to set Fitness Goal...");
         BluetoothGattCharacteristic characteristic = getCharacteristic(MiBandService.UUID_CHARACTERISTIC_CONTROL_POINT);
         if (characteristic != null) {
-            int fitnessGoal = MiBandCoordinator.getFitnessGoal(getDevice().getAddress());
+            int fitnessGoal = GBApplication.getPrefs().getInt(ActivityUser.PREF_USER_STEPS_GOAL, 10000);
             transaction.write(characteristic, new byte[]{
                     MiBandService.COMMAND_SET_FITNESS_GOAL,
                     0,
@@ -454,17 +479,17 @@ public class MiBandSupport extends AbstractBTLEDeviceSupport {
         return this;
     }
 
-    private void performDefaultNotification(String task, short repeat, BtLEAction extraAction) {
+    private void performDefaultNotification(String task, SimpleNotification simpleNotification, short repeat, BtLEAction extraAction) {
         try {
             TransactionBuilder builder = performInitialized(task);
-            sendDefaultNotification(builder, repeat, extraAction);
+            sendDefaultNotification(builder, simpleNotification, repeat, extraAction);
             builder.queue(getQueue());
         } catch (IOException ex) {
             LOG.error("Unable to send notification to MI device", ex);
         }
     }
 
-    private void performPreferredNotification(String task, String notificationOrigin, BtLEAction extraAction) {
+    private void performPreferredNotification(String task, @Nullable SimpleNotification simpleNotification, String notificationOrigin, BtLEAction extraAction) {
         try {
             TransactionBuilder builder = performInitialized(task);
             Prefs prefs = GBApplication.getPrefs();
@@ -479,7 +504,7 @@ public class MiBandSupport extends AbstractBTLEDeviceSupport {
             int flashDuration = getPreferredFlashDuration(notificationOrigin, prefs);
 
 //            setLowLatency(builder);
-            sendCustomNotification(profile, flashTimes, flashColour, originalColour, flashDuration, extraAction, builder);
+            sendCustomNotification(profile, simpleNotification, flashTimes, flashColour, originalColour, flashDuration, extraAction, builder);
 //            setHighLatency(builder);
 //            sendCustomNotification(vibrateDuration, vibrateTimes, vibratePause, flashTimes, flashColour, originalColour, flashDuration, builder);
             builder.queue(getQueue());
@@ -550,7 +575,7 @@ public class MiBandSupport extends AbstractBTLEDeviceSupport {
         }
 
         String origin = notificationSpec.type.getGenericType();
-        performPreferredNotification(origin + " received", origin, null);
+        performPreferredNotification(origin + " received", null, origin, null);
     }
 
     private void onAlarmClock(NotificationSpec notificationSpec) {
@@ -561,7 +586,9 @@ public class MiBandSupport extends AbstractBTLEDeviceSupport {
                 return !isAlarmClockRinging();
             }
         };
-        performPreferredNotification("alarm clock ringing", MiBandConst.ORIGIN_ALARM_CLOCK, abortAction);
+        String message = NotificationUtils.getPreferredTextFor(notificationSpec, 40, 40, getContext());
+        SimpleNotification simpleNotification = new SimpleNotification(message, AlertCategory.HighPriorityAlert);
+        performPreferredNotification("alarm clock ringing", simpleNotification, MiBandConst.ORIGIN_ALARM_CLOCK, abortAction);
     }
 
     @Override
@@ -625,7 +652,9 @@ public class MiBandSupport extends AbstractBTLEDeviceSupport {
                     return !isTelephoneRinging();
                 }
             };
-            performPreferredNotification("incoming call", MiBandConst.ORIGIN_INCOMING_CALL, abortAction);
+            String message = NotificationUtils.getPreferredTextFor(callSpec);
+            SimpleNotification simpleNotification = new SimpleNotification(message, AlertCategory.IncomingCall);
+            performPreferredNotification("incoming call", simpleNotification, MiBandConst.ORIGIN_INCOMING_CALL, abortAction);
         } else if ((callSpec.command == CallSpec.CALL_START) || (callSpec.command == CallSpec.CALL_END)) {
             telephoneRinging = false;
         }
@@ -716,7 +745,8 @@ public class MiBandSupport extends AbstractBTLEDeviceSupport {
                     return !isLocatingDevice;
                 }
             };
-            performDefaultNotification("locating device", (short) 255, abortAction);
+            SimpleNotification simpleNotification = new SimpleNotification(getContext().getString(R.string.find_device_you_found_it), AlertCategory.HighPriorityAlert);
+            performDefaultNotification("locating device", simpleNotification, (short) 255, abortAction);
         }
     }
 
@@ -937,7 +967,7 @@ public class MiBandSupport extends AbstractBTLEDeviceSupport {
     }
 
     private void handleRealtimeSteps(byte[] value) {
-        int steps = 0xff & value[0] | (0xff & value[1]) << 8;
+        int steps = BLETypeConversions.toUint16(value);
         if (LOG.isDebugEnabled()) {
             LOG.debug("realtime steps: " + steps);
         }
@@ -1240,8 +1270,26 @@ public class MiBandSupport extends AbstractBTLEDeviceSupport {
 
     }
 
-    private void handleSensorData(byte[] value) {
-        int counter=0, step=0, axis1=0, axis2=0, axis3 =0;
+    /**
+     * Analyse and decode sensor data from ADXL362 accelerometer
+     * @param value to decode
+     * @return nothing
+     *
+     * Each axis raw value is 16bits long and look like : ttssvvvvvvvvvvvv
+     *   tt : 2 bits for the type of data (00=x, 01=y, 10=z, 11=temperature)
+     *   ss : sign of the value
+     *   vvvvvvvvvvvv : accelerometer value encoded using two complements
+     *
+     * TODO: Because each accelerometer is different, all values should be calibrated with  :
+     *   a scale factor
+     *   an offset factor
+     */
+    private static void handleSensorData(byte[] value) {
+        int counter=0, step=0;
+        double xAxis=0.0, yAxis=0.0, zAxis=0.0;
+        double scale_factor = 1000.0;
+        double gravity = 9.81;
+
         if ((value.length - 2) % 6 != 0) {
             LOG.warn("GOT UNEXPECTED SENSOR DATA WITH LENGTH: " + value.length);
             for (byte b : value) {
@@ -1252,11 +1300,46 @@ public class MiBandSupport extends AbstractBTLEDeviceSupport {
             counter = (value[0] & 0xff) | ((value[1] & 0xff) << 8);
             for (int idx = 0; idx < ((value.length - 2) / 6); idx++) {
                 step = idx * 6;
-                axis1 = (value[step+2] & 0xff) | ((value[step+3] & 0xff) << 8);
-                axis2 = (value[step+4] & 0xff) | ((value[step+5] & 0xff) << 8);
-                axis3 = (value[step+6] & 0xff) | ((value[step+7] & 0xff) << 8);
+
+                // Analyse X-axis data
+                int xAxisRawValue = (value[step+2] & 0xff) | ((value[step+3] & 0xff) << 8);
+                int xAxisSign = (value[step+3] & 0x30) >> 4;
+                int xAxisType = (value[step+3] & 0xc0) >> 6;
+                if (xAxisSign == 0) {
+                    xAxis = xAxisRawValue & 0xfff;
+                }
+                else {
+                    xAxis = (xAxisRawValue & 0xfff) - 4097;
+                }
+                xAxis = (xAxis*1.0 / scale_factor) * gravity;
+
+                // Analyse Y-axis data
+                int yAxisRawValue = (value[step+4] & 0xff) | ((value[step+5] & 0xff) << 8);
+                int yAxisSign = (value[step+5] & 0x30) >> 4;
+                int yAxisType = (value[step+5] & 0xc0) >> 6;
+                if (yAxisSign == 0) {
+                    yAxis = yAxisRawValue & 0xfff;
+                }
+                else {
+                    yAxis = (yAxisRawValue & 0xfff) - 4097;
+                }
+                yAxis = (yAxis / scale_factor) * gravity;
+
+                // Analyse Z-axis data
+                int zAxisRawValue = (value[step+6] & 0xff) | ((value[step+7] & 0xff) << 8);
+                int zAxisSign = (value[step+7] & 0x30) >> 4;
+                int zAxisType = (value[step+7] & 0xc0) >> 6;
+                if (zAxisSign == 0) {
+                    zAxis = zAxisRawValue & 0xfff;
+                }
+                else {
+                    zAxis = (zAxisRawValue & 0xfff) - 4097;
+                }
+                zAxis = (zAxis / scale_factor) * gravity;
+
+                // Print results in log
+                LOG.info("READ SENSOR DATA VALUES: counter:"+counter+" step:"+step+" x-axis:"+ String.format("%.03f",xAxis)+" y-axis:"+String.format("%.03f",yAxis)+" z-axis:"+String.format("%.03f",zAxis)+";");
             }
-            LOG.info("READ SENSOR DATA VALUES: counter:"+counter+" step:"+step+" axis1:"+axis1+" axis2:"+axis2+" axis3:"+axis3+";");
         }
     }
 }

@@ -1,3 +1,19 @@
+/*  Copyright (C) 2016-2017 Andreas Shimokawa, Carsten Pfeiffer
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.contentprovider;
 
 import android.content.BroadcastReceiver;
@@ -58,17 +74,17 @@ public class PebbleContentProvider extends ContentProvider {
         if (uri.equals(CONTENT_URI)) {
             MatrixCursor mc = new MatrixCursor(columnNames);
             int connected = 0;
-            int appMessage = 0;
+            int pebbleKit = 0;
             Prefs prefs = GBApplication.getPrefs();
             if (prefs.getBoolean("pebble_enable_pebblekit", false)) {
-                appMessage = 1;
+                pebbleKit = 1;
             }
             String fwString = "unknown";
             if (mGBDevice != null && mGBDevice.getType() == DeviceType.PEBBLE && mGBDevice.isInitialized()) {
                 connected = 1;
                 fwString = mGBDevice.getFirmwareVersion();
             }
-            mc.addRow(new Object[]{connected, appMessage, 0, 3, 8, 2, fwString});
+            mc.addRow(new Object[]{connected, pebbleKit, pebbleKit, 3, 8, 2, fwString});
 
             return mc;
         } else {

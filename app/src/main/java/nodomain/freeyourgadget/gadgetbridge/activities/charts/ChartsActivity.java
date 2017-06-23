@@ -1,3 +1,20 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer, Daniele
+    Gobbetti
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities.charts;
 
 import android.app.Dialog;
@@ -10,7 +27,6 @@ import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentStatePagerAdapter;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.view.PagerTabStrip;
 import android.support.v4.view.ViewPager;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.view.Menu;
@@ -37,6 +53,7 @@ import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.util.DateTimeUtils;
 import nodomain.freeyourgadget.gadgetbridge.util.DeviceHelper;
 import nodomain.freeyourgadget.gadgetbridge.util.GB;
+import nodomain.freeyourgadget.gadgetbridge.util.LimitedQueue;
 
 public class ChartsActivity extends AbstractGBFragmentActivity implements ChartsHost {
 
@@ -49,14 +66,15 @@ public class ChartsActivity extends AbstractGBFragmentActivity implements Charts
     private Date mStartDate;
     private Date mEndDate;
     private SwipeRefreshLayout swipeLayout;
-    private PagerTabStrip mPagerTabStrip;
     private ViewPager viewPager;
+
+    LimitedQueue mActivityAmountCache = new LimitedQueue(60);
 
     private static class ShowDurationDialog extends Dialog {
         private final String mDuration;
         private TextView durationLabel;
 
-        public ShowDurationDialog(String duration, Context context) {
+        ShowDurationDialog(String duration, Context context) {
             super(context);
             mDuration = duration;
         }
@@ -180,7 +198,6 @@ public class ChartsActivity extends AbstractGBFragmentActivity implements Charts
                 handleNextButtonClicked();
             }
         });
-        mPagerTabStrip = (PagerTabStrip) findViewById(R.id.charts_pagerTabStrip);
 
         LinearLayout mainLayout = (LinearLayout) findViewById(R.id.charts_main_layout);
     }
@@ -298,7 +315,7 @@ public class ChartsActivity extends AbstractGBFragmentActivity implements Charts
      */
     public class SectionsPagerAdapter extends AbstractFragmentPagerAdapter {
 
-        public SectionsPagerAdapter(FragmentManager fm) {
+        SectionsPagerAdapter(FragmentManager fm) {
             super(fm);
         }
 
@@ -311,9 +328,13 @@ public class ChartsActivity extends AbstractGBFragmentActivity implements Charts
                 case 1:
                     return new SleepChartFragment();
                 case 2:
-                    return new WeekStepsChartFragment();
+                    return new WeekSleepChartFragment();
                 case 3:
+                    return new WeekStepsChartFragment();
+                case 4:
                     return new LiveActivityFragment();
+                case 5:
+                    return new StatsChartFragment();
 
             }
             return null;
@@ -321,8 +342,8 @@ public class ChartsActivity extends AbstractGBFragmentActivity implements Charts
 
         @Override
         public int getCount() {
-            // Show 3 total pages.
-            return 4;
+            // Show 5 total pages.
+            return 6;
         }
 
         @Override
@@ -333,9 +354,13 @@ public class ChartsActivity extends AbstractGBFragmentActivity implements Charts
                 case 1:
                     return getString(R.string.sleepchart_your_sleep);
                 case 2:
-                    return getString(R.string.weekstepschart_steps_a_week);
+                    return getString(R.string.weeksleepchart_sleep_a_week);
                 case 3:
+                    return getString(R.string.weekstepschart_steps_a_week);
+                case 4:
                     return getString(R.string.liveactivity_live_activity);
+                case 5:
+                    return getString(R.string.stats_title);
             }
             return super.getPageTitle(position);
         }

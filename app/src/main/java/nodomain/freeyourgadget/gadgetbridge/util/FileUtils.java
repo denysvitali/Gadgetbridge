@@ -1,3 +1,19 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer, JohnnySun
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.util;
 
 import android.content.ContentResolver;
@@ -22,6 +38,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
+import nodomain.freeyourgadget.gadgetbridge.GBEnvironment;
 
 public class FileUtils {
     // Don't use slf4j here -- would be a bootstrapping problem
@@ -38,7 +55,9 @@ public class FileUtils {
         if (!sourceFile.exists()) {
             throw new IOException("Does not exist: " + sourceFile.getAbsolutePath());
         }
-        copyFile(new FileInputStream(sourceFile), new FileOutputStream(destFile));
+        try (FileInputStream in = new FileInputStream(sourceFile); FileOutputStream out = new FileOutputStream(destFile)) {
+            copyFile(in, out);
+        }
     }
 
     private static void copyFile(FileInputStream sourceStream, FileOutputStream destStream) throws IOException {
@@ -191,9 +210,11 @@ public class FileUtils {
 
             // the first directory is also the primary external storage, i.e. the same as Environment.getExternalFilesDir()
             // TODO: check the mount state of *all* dirs when switching to later API level
-            if (i == 0 && !Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
-                GB.log("ignoring unmounted external storage dir: " + dir, GB.INFO, null);
-                continue;
+            if (!GBEnvironment.env().isLocalTest()) { // don't do this with robolectric
+                if (i == 0 && !Environment.MEDIA_MOUNTED.equals(Environment.getExternalStorageState())) {
+                    GB.log("ignoring unmounted external storage dir: " + dir, GB.INFO, null);
+                    continue;
+                }
             }
             result.add(dir); // add last
         }
@@ -213,13 +234,13 @@ public class FileUtils {
     public static byte[] readAll(InputStream in, long maxLen) throws IOException {
         ByteArrayOutputStream out = new ByteArrayOutputStream(Math.max(8192, in.available()));
         byte[] buf = new byte[8192];
-        int read = 0;
+        int read;
         long totalRead = 0;
         while ((read = in.read(buf)) > 0) {
             out.write(buf, 0, read);
             totalRead += read;
             if (totalRead > maxLen) {
-                throw new IOException("Too much data to read into memory. Got already " + totalRead + buf);
+                throw new IOException("Too much data to read into memory. Got already " + totalRead);
             }
         }
         return out.toByteArray();

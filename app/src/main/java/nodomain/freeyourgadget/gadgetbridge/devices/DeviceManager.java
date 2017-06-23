@@ -1,3 +1,19 @@
+/*  Copyright (C) 2016-2017 Andreas Shimokawa, Carsten Pfeiffer
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.devices;
 
 import android.bluetooth.BluetoothDevice;
@@ -18,6 +34,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
+import nodomain.freeyourgadget.gadgetbridge.GBApplication;
+import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
+import nodomain.freeyourgadget.gadgetbridge.database.DBHelper;
 import nodomain.freeyourgadget.gadgetbridge.impl.GBDevice;
 import nodomain.freeyourgadget.gadgetbridge.util.DeviceHelper;
 
@@ -71,6 +90,12 @@ public class DeviceManager {
                             deviceList.set(index, dev);
                         } else {
                             deviceList.add(dev);
+                        }
+                        if (dev.isInitialized()) {
+                            try (DBHandler dbHandler = GBApplication.acquireDB()) {
+                                DBHelper.getDevice(dev, dbHandler.getDaoSession()); // implicitly creates the device in database if not present, and updates device attributes
+                            } catch (Exception ignore) {
+                            }
                         }
                     }
                     updateSelectedDevice(dev);

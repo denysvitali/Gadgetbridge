@@ -1,11 +1,27 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer, Daniele
+    Gobbetti, Lem Dulfo
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.activities;
 
 import android.os.Bundle;
 import android.text.format.DateFormat;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.CheckBox;
-import android.widget.TextView;
+import android.widget.CheckedTextView;
 import android.widget.TimePicker;
 
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
@@ -19,16 +35,15 @@ public class AlarmDetails extends GBActivity {
 
     private GBAlarm alarm;
     private TimePicker timePicker;
-    private CheckBox cbSmartWakeup;
-    private CheckBox cbMonday;
-    private CheckBox cbTuesday;
-    private CheckBox cbWednesday;
-    private CheckBox cbThursday;
-    private CheckBox cbFriday;
-    private CheckBox cbSaturday;
-    private CheckBox cbSunday;
+    private CheckedTextView cbSmartWakeup;
+    private CheckedTextView cbMonday;
+    private CheckedTextView cbTuesday;
+    private CheckedTextView cbWednesday;
+    private CheckedTextView cbThursday;
+    private CheckedTextView cbFriday;
+    private CheckedTextView cbSaturday;
+    private CheckedTextView cbSunday;
     private GBDevice device;
-    private TextView smartAlarmLabel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,15 +54,56 @@ public class AlarmDetails extends GBActivity {
         device = getIntent().getParcelableExtra(GBDevice.EXTRA_DEVICE);
 
         timePicker = (TimePicker) findViewById(R.id.alarm_time_picker);
-        smartAlarmLabel = (TextView) findViewById(R.id.alarm_label_smart_wakeup);
-        cbSmartWakeup = (CheckBox) findViewById(R.id.alarm_cb_smart_wakeup);
-        cbMonday = (CheckBox) findViewById(R.id.alarm_cb_mon);
-        cbTuesday = (CheckBox) findViewById(R.id.alarm_cb_tue);
-        cbWednesday = (CheckBox) findViewById(R.id.alarm_cb_wed);
-        cbThursday = (CheckBox) findViewById(R.id.alarm_cb_thu);
-        cbFriday = (CheckBox) findViewById(R.id.alarm_cb_fri);
-        cbSaturday = (CheckBox) findViewById(R.id.alarm_cb_sat);
-        cbSunday = (CheckBox) findViewById(R.id.alarm_cb_sun);
+        cbSmartWakeup = (CheckedTextView) findViewById(R.id.alarm_cb_smart_wakeup);
+        cbMonday = (CheckedTextView) findViewById(R.id.alarm_cb_monday);
+        cbTuesday = (CheckedTextView) findViewById(R.id.alarm_cb_tuesday);
+        cbWednesday = (CheckedTextView) findViewById(R.id.alarm_cb_wednesday);
+        cbThursday = (CheckedTextView) findViewById(R.id.alarm_cb_thursday);
+        cbFriday = (CheckedTextView) findViewById(R.id.alarm_cb_friday);
+        cbSaturday = (CheckedTextView) findViewById(R.id.alarm_cb_saturday);
+        cbSunday = (CheckedTextView) findViewById(R.id.alarm_cb_sunday);
+
+
+        cbSmartWakeup.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                ((CheckedTextView) v).toggle();
+            }
+        });
+        cbMonday.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                ((CheckedTextView) v).toggle();
+            }
+        });
+        cbTuesday.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                ((CheckedTextView) v).toggle();
+            }
+        });
+        cbWednesday.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                ((CheckedTextView) v).toggle();
+            }
+        });
+        cbThursday.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                ((CheckedTextView) v).toggle();
+            }
+        });
+        cbFriday.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                ((CheckedTextView) v).toggle();
+            }
+        });
+        cbSaturday.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                ((CheckedTextView) v).toggle();
+            }
+        });
+        cbSunday.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                ((CheckedTextView) v).toggle();
+            }
+        });
 
         timePicker.setIs24HourView(DateFormat.is24HourFormat(GBApplication.getContext()));
         timePicker.setCurrentHour(alarm.getHour());
@@ -56,7 +112,6 @@ public class AlarmDetails extends GBActivity {
         cbSmartWakeup.setChecked(alarm.isSmartWakeup());
         int smartAlarmVisibility = supportsSmartWakeup() ? View.VISIBLE : View.GONE;
         cbSmartWakeup.setVisibility(smartAlarmVisibility);
-        smartAlarmLabel.setVisibility(smartAlarmVisibility);
 
         cbMonday.setChecked(alarm.getRepetition(GBAlarm.ALARM_MON));
         cbTuesday.setChecked(alarm.getRepetition(GBAlarm.ALARM_TUE));
@@ -88,7 +143,7 @@ public class AlarmDetails extends GBActivity {
     }
 
     private void updateAlarm() {
-        alarm.setSmartWakeup(cbSmartWakeup.isChecked());
+        alarm.setSmartWakeup(supportsSmartWakeup() && cbSmartWakeup.isChecked());
         alarm.setRepetition(cbMonday.isChecked(), cbTuesday.isChecked(), cbWednesday.isChecked(), cbThursday.isChecked(), cbFriday.isChecked(), cbSaturday.isChecked(), cbSunday.isChecked());
         alarm.setHour(timePicker.getCurrentHour());
         alarm.setMinute(timePicker.getCurrentMinute());

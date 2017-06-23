@@ -2,7 +2,7 @@
  names () 
  { 
  echo -e "\n exit;\n**Contributors (sorted by number of commits):**\n";
- git log --format='%aN:%aE' origin/master | sed 's/@users.github.com/@users.noreply.github.com/g' | awk 'BEGIN{FS=":"}{ct[$2]+=1;if (length($1) > length(e[$2])) {e[$2]=$1}}END{for (i in e)  { n[e[i]]=i;c[e[i]]+=ct[i] }; for (a in n) print c[a]"\t* "a" <"n[a]">";}' | sort -n -r | cut -f 2-
+ git log --format='%aN:%ae' origin/master | grep -Ev "FYG_.*_bot_ignore_me" | sed 's/@users.github.com/@users.noreply.github.com/g' | awk 'BEGIN{FS=":"}{ct[$1]+=1;if (length($2) > length(e[$1])) {e[$1]=$2}}END{for (i in e)  { n[i]=e[i];c[i]+=ct[i] }; for (a in e) print c[a]"\t* "a" <"n[a]">";}' | sort -n -r | cut -f 2-
  }
  quine () 
  { 
@@ -25,19 +25,25 @@
 * Andreas Shimokawa <shimokawa@fsfe.org>
 * Carsten Pfeiffer <cpfeiffer@users.noreply.github.com>
 * Daniele Gobbetti <daniele+github@gobbetti.name>
-* Julien Pivotto <roidelapluie@inuits.eu>
 * João Paulo Barraca <jpbarraca@gmail.com>
+* ivanovlev <lion.ivanov@gmal.com>
+* Julien Pivotto <roidelapluie@inuits.eu>
 * Steffen Liebergeld <perl@gmx.org>
 * Lem Dulfo <lemuel.dulfo@gmail.com>
 * Sergey Trofimov <sarg@sarg.org.ru>
 * JohnnySun <bmy001@gmail.com>
 * Uwe Hermann <uwe@hermann-uwe.de>
+* Alberto <albertsal83@gmail.com>
 * 0nse <0nse@users.noreply.github.com>
 * Gergely Peidl <gergely@peidl.net>
 * Christian Fischer <sw-dev@computerlyrik.de>
-* Normano64 <per.bergqwist@gmail.com>
 * 6arms1leg <m.brnsfld@googlemail.com>
+* walkjivefly <mark@walkjivefly.com>
+* Normano64 <per.bergqwist@gmail.com>
+* Avamander <Avamander@users.noreply.github.com>
 * Ⲇⲁⲛⲓ Φi <daniphii@outlook.com>
+* Yar <yaroslav.isakov@gmail.com>
+* Yaron Shahrabani <sh.yaron@gmail.com>
 * xzovy <caleb@caleb-cooper.net>
 * xphnx <xphnx@users.noreply.github.com>
 * Tarik Sekmen <tarik@ilixi.org>
@@ -51,8 +57,10 @@
 * Kevin Richter <me@kevinrichter.nl>
 * Kasha <kasha_malaga@hotmail.com>
 * Ivan <ivan_tizhanin@mail.ru>
+* Hasan Ammar <ammarh@gmail.com>
 * Gilles MOREL <contact@gilles-morel.fr>
 * Gilles Émilien MOREL <Almtesh@users.noreply.github.com>
+* Daniel Hauck <maill@dhauck.eu>
 * Chris Perelstein <chris.perelstein@gmail.com>
 * Carlos Ferreira <calbertoferreira@gmail.com>
 * atkyritsis <at.kyritsis@gmail.com>

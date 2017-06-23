@@ -1,3 +1,20 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer, ivanovlev,
+    JohnnySun, Julien Pivotto, Kasha, Steffen Liebergeld
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.model;
 
 import android.support.annotation.Nullable;
@@ -80,7 +97,7 @@ public interface DeviceService extends EventHandler {
     String EXTRA_URI = "uri";
     String EXTRA_CONFIG = "config";
     String EXTRA_ALARMS = "alarms";
-    String EXTRA_PERFORM_PAIR = "perform_pair";
+    String EXTRA_CONNECT_FIRST_TIME = "connect_first_time";
     String EXTRA_BOOLEAN_ENABLE = "enable_realtime_steps";
 
     String EXTRA_WEATHER_TIMESTAMP = "weather_timestamp";
@@ -112,6 +129,7 @@ public interface DeviceService extends EventHandler {
     String EXTRA_CALENDAREVENT_DURATION = "calendarevent_duration";
     String EXTRA_CALENDAREVENT_TITLE = "calendarevent_title";
     String EXTRA_CALENDAREVENT_DESCRIPTION = "calendarevent_description";
+    String EXTRA_CALENDAREVENT_LOCATION = "calendarevent_location";
 
     void start();
 

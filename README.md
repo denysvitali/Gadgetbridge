@@ -14,25 +14,24 @@ need to create an account and transmit any of your data to the vendor's servers.
 [List of changes](CHANGELOG.md)
 
 ## Supported Devices
-* Pebble, Pebble Steel, Pebble Time, Pebble Time Steel, Pebble Time Round
-* Pebble 2, Pebble Time 2 (experimental, PAIR WITHIN GADGETBRIDGE)
-* Mi Band, Mi Band 1A, Mi Band 1S
-* Mi Band 2
+* Pebble, Pebble Steel, Pebble Time, Pebble Time Steel, Pebble Time Round [Wiki section about this device](https://github.com/Freeyourgadget/Gadgetbridge/wiki/Pebble)
+* Pebble 2 (add the device from within Gadgetbridge!) [Wiki section about pebble](https://github.com/Freeyourgadget/Gadgetbridge/wiki/Pebble), most parts apply to Pebble 2 as well
+* Mi Band, Mi Band 1A, Mi Band 1S [Wiki section about this device](https://github.com/Freeyourgadget/Gadgetbridge/wiki/Mi-Band)
+* Mi Band 2 [Wiki section about mi band](https://github.com/Freeyourgadget/Gadgetbridge/wiki/Mi-Band), some parts apply to mi band 2 as well
 * Vibratissimo (experimental)
 * Liveview
-* HPlus Devices (e.g. ZeBand)
+* HPlus Devices (e.g. ZeBand) [Wiki section about this device](https://github.com/Freeyourgadget/Gadgetbridge/wiki/HPlus)
 
 ## Features (Pebble)
 
 * Incoming calls notification and display
 * Outgoing call display
-* Reject/hangup calls
+* Reject calls (optionally with predefined texts) / hangup calls
 * SMS notification
-* K-9 Mail notification support
-* Support for generic notifications (above filtered out)
-* Support for up to 16 predefined replies for SMS and Android Wear compatible notifications (experimental, tested with Signal)
+* Support for generic notifications
+* Support for up to 16 predefined replies for SMS and Android Wear compatible notifications (experimental, tested with Signal and Conversations)
 * Dismiss individual notifications, mute or open corresponding app on phone from the action menu (generic notifications)
-* Dismiss all notifications from the action menu (non-generic notifications) 
+* Dismiss all notifications from the action menu (SMS and PebbleKit notifications)
 * Music playback info (artist, album, track)
 * Music control: play/pause, next track, previous track, volume up, volume down
 * List and remove installed apps/watchfaces
@@ -41,7 +40,8 @@ need to create an account and transmit any of your data to the vendor's servers.
 * Install language files (.pbl)
 * Take and share screenshots from the Pebble's screen
 * PebbleKit support for 3rd Party Android Apps (experimental)
-* Fetch activity data from Pebble Health, Misfit and Morpheuz (experimental)
+* Fetch activity data from Pebble Health
+* Build-in support for Misfit and Morpheuz (experimental)
 * Configure watchfaces / apps (limited compatibility, experimental)
 
 ## Notes about Firmware >=3.0 (Pebble Time, updated OG)
@@ -152,6 +152,7 @@ Feel free to open an issue on our issue tracker, but please:
 
 ## Having problems?
 
+0. Phone crashing during device discovery? Disable Privacy Guard (or similarly named functionality) during discovery.
 1. Open Gadgetbridge's settings and check the option to write log files
 2. Reproduce the problem you encountered
 3. Check the logfile at /sdcard/Android/data/nodomain.freeyourgadget.gadgetbridge/files/gadgetbridge.log

@@ -1,3 +1,20 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Carsten Pfeiffer, Daniele
+    Gobbetti, Uwe Hermann
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.devices.pebble;
 
 import android.content.Context;
@@ -80,9 +97,13 @@ public class PBWReader {
             return;
         }
 
-        String platformDir = determinePlatformDir(uriHelper, platform);
-        if (platform.equals("chalk") && platformDir.equals("")) {
-            return;
+        String platformDir = "";
+        if (!uriHelper.getFileName().endsWith(".pbz")) {
+            platformDir = determinePlatformDir(uriHelper, platform);
+
+            if (platform.equals("chalk") && platformDir.equals("")) {
+                return;
+            }
         }
 
         LOG.info("using platformdir: '" + platformDir + "'");
@@ -220,9 +241,6 @@ public class PBWReader {
     private String determinePlatformDir(UriHelper uriHelper, String platform) throws IOException {
         String platformDir = "";
 
-        if (uriHelper.getFileName().endsWith(".pbz")) {
-            return platformDir;
-        }
         /*
          * for aplite and basalt it is possible to install 2.x apps which have no subfolder
          * we still prefer the subfolders if present.

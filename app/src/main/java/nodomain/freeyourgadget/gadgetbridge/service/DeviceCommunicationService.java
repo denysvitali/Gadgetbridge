@@ -1,5 +1,25 @@
+/*  Copyright (C) 2015-2017 Andreas Shimokawa, Avamander, Carsten Pfeiffer,
+    Daniele Gobbetti, Daniel Hauck, ivanovlev, João Paulo Barraca, Julien
+    Pivotto, Kasha, Sergey Trofimov, Steffen Liebergeld, Uwe Hermann
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.service;
 
+import android.Manifest;
+import android.annotation.SuppressLint;
 import android.app.NotificationManager;
 import android.app.Service;
 import android.bluetooth.BluetoothDevice;
@@ -8,9 +28,11 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.IBinder;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.LocalBroadcastManager;
 import android.widget.Toast;
 
@@ -23,13 +45,12 @@ import java.util.UUID;
 
 import nodomain.freeyourgadget.gadgetbridge.GBApplication;
 import nodomain.freeyourgadget.gadgetbridge.R;
-import nodomain.freeyourgadget.gadgetbridge.activities.OnboardingActivity;
-import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
-import nodomain.freeyourgadget.gadgetbridge.database.DBHelper;
-import nodomain.freeyourgadget.gadgetbridge.entities.DaoSession;
+import nodomain.freeyourgadget.gadgetbridge.devices.DeviceCoordinator;
 import nodomain.freeyourgadget.gadgetbridge.externalevents.AlarmClockReceiver;
 import nodomain.freeyourgadget.gadgetbridge.externalevents.AlarmReceiver;
 import nodomain.freeyourgadget.gadgetbridge.externalevents.BluetoothConnectReceiver;
+import nodomain.freeyourgadget.gadgetbridge.externalevents.BluetoothPairingRequestReceiver;
+import nodomain.freeyourgadget.gadgetbridge.externalevents.CalendarReceiver;
 import nodomain.freeyourgadget.gadgetbridge.externalevents.MusicPlaybackReceiver;
 import nodomain.freeyourgadget.gadgetbridge.externalevents.PebbleReceiver;
 import nodomain.freeyourgadget.gadgetbridge.externalevents.PhoneCallReceiver;
@@ -40,7 +61,6 @@ import nodomain.freeyourgadget.gadgetbridge.model.Alarm;
 import nodomain.freeyourgadget.gadgetbridge.model.CalendarEventSpec;
 import nodomain.freeyourgadget.gadgetbridge.model.CallSpec;
 import nodomain.freeyourgadget.gadgetbridge.model.CannedMessagesSpec;
-import nodomain.freeyourgadget.gadgetbridge.model.DeviceType;
 import nodomain.freeyourgadget.gadgetbridge.model.MusicSpec;
 import nodomain.freeyourgadget.gadgetbridge.model.MusicStateSpec;
 import nodomain.freeyourgadget.gadgetbridge.model.NotificationSpec;
@@ -91,6 +111,7 @@ import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_BOO
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_CALENDAREVENT_DESCRIPTION;
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_CALENDAREVENT_DURATION;
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_CALENDAREVENT_ID;
+import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_CALENDAREVENT_LOCATION;
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_CALENDAREVENT_TIMESTAMP;
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_CALENDAREVENT_TITLE;
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_CALENDAREVENT_TYPE;
@@ -100,6 +121,7 @@ import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_CAL
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_CANNEDMESSAGES;
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_CANNEDMESSAGES_TYPE;
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_CONFIG;
+import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_CONNECT_FIRST_TIME;
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_FIND_START;
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_MUSIC_ALBUM;
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_MUSIC_ARTIST;
@@ -121,7 +143,6 @@ import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_NOT
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_NOTIFICATION_SUBJECT;
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_NOTIFICATION_TITLE;
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_NOTIFICATION_TYPE;
-import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_PERFORM_PAIR;
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_URI;
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_VIBRATION_INTENSITY;
 import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_WEATHER_CURRENTCONDITION;
@@ -137,6 +158,7 @@ import static nodomain.freeyourgadget.gadgetbridge.model.DeviceService.EXTRA_WEA
 
 public class DeviceCommunicationService extends Service implements SharedPreferences.OnSharedPreferenceChangeListener {
     private static final Logger LOG = LoggerFactory.getLogger(DeviceCommunicationService.class);
+    @SuppressLint("StaticFieldLeak") // only used for test cases
     private static DeviceSupportFactory DEVICE_SUPPORT_FACTORY = null;
 
     private boolean mStarted = false;
@@ -151,9 +173,11 @@ public class DeviceCommunicationService extends Service implements SharedPrefere
     private MusicPlaybackReceiver mMusicPlaybackReceiver = null;
     private TimeChangeReceiver mTimeChangeReceiver = null;
     private BluetoothConnectReceiver mBlueToothConnectReceiver = null;
+    private BluetoothPairingRequestReceiver mBlueToothPairingRequestReceiver = null;
     private AlarmClockReceiver mAlarmClockReceiver = null;
 
     private AlarmReceiver mAlarmReceiver = null;
+    private CalendarReceiver mCalendarReceiver = null;
     private Random mRandom = new Random();
 
     private final String[] mMusicActions = {
@@ -185,35 +209,13 @@ public class DeviceCommunicationService extends Service implements SharedPrefere
             String action = intent.getAction();
             if (action.equals(GBDevice.ACTION_DEVICE_CHANGED)) {
                 GBDevice device = intent.getParcelableExtra(GBDevice.EXTRA_DEVICE);
-                // FIXME: mGBDevice was null here once
-                if (mGBDevice.equals(device)) {
+                if (mGBDevice != null && mGBDevice.equals(device)) {
                     mGBDevice = device;
                     boolean enableReceivers = mDeviceSupport != null && (mDeviceSupport.useAutoConnect() || mGBDevice.isInitialized());
-                    setReceiversEnableState(enableReceivers);
+                    setReceiversEnableState(enableReceivers, mGBDevice.isInitialized(), DeviceHelper.getInstance().getCoordinator(device));
                     GB.updateNotification(mGBDevice.getName() + " " + mGBDevice.getStateString(), mGBDevice.isInitialized(), context);
-
-                    if (device.isInitialized()) {
-                        try (DBHandler dbHandler = GBApplication.acquireDB()) {
-                            DaoSession session = dbHandler.getDaoSession();
-                            boolean askForDBMigration = false;
-                            if (DBHelper.findDevice(device, session) == null && device.getType() != DeviceType.VIBRATISSIMO && (device.getType() != DeviceType.LIVEVIEW)) {
-                                askForDBMigration = true;
-                            }
-                            DBHelper.getDevice(device, session); // implicitly creates the device in database if not present, and updates device attributes
-                            if (askForDBMigration) {
-                                DBHelper dbHelper = new DBHelper(context);
-                                if (dbHelper.getOldActivityDatabaseHandler() != null) {
-                                    Intent startIntent = new Intent(context, OnboardingActivity.class);
-                                    startIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                                    startIntent.putExtra(GBDevice.EXTRA_DEVICE, device);
-                                    startActivity(startIntent);
-                                }
-                            }
-                        } catch (Exception ignore) {
-                        }
-                    }
                 } else {
-                    LOG.error("Got ACTION_DEVICE_CHANGED from unexpected device: " + mGBDevice);
+                    LOG.error("Got ACTION_DEVICE_CHANGED from unexpected device: " + device);
                 }
             }
         }
@@ -247,7 +249,7 @@ public class DeviceCommunicationService extends Service implements SharedPrefere
         }
 
         String action = intent.getAction();
-        boolean pair = intent.getBooleanExtra(EXTRA_PERFORM_PAIR, false);
+        boolean firstTime = intent.getBooleanExtra(EXTRA_CONNECT_FIRST_TIME, false);
 
         if (action == null) {
             LOG.info("no action");
@@ -307,8 +309,8 @@ public class DeviceCommunicationService extends Service implements SharedPrefere
                         DeviceSupport deviceSupport = mFactory.createDeviceSupport(gbDevice);
                         if (deviceSupport != null) {
                             setDeviceSupport(deviceSupport);
-                            if (pair) {
-                                deviceSupport.pair();
+                            if (firstTime) {
+                                deviceSupport.connectFirstTime();
                             } else {
                                 deviceSupport.setAutoReconnect(autoReconnect);
                                 deviceSupport.connect();
@@ -377,6 +379,7 @@ public class DeviceCommunicationService extends Service implements SharedPrefere
                 calendarEventSpec.durationInSeconds = intent.getIntExtra(EXTRA_CALENDAREVENT_DURATION, -1);
                 calendarEventSpec.title = intent.getStringExtra(EXTRA_CALENDAREVENT_TITLE);
                 calendarEventSpec.description = intent.getStringExtra(EXTRA_CALENDAREVENT_DESCRIPTION);
+                calendarEventSpec.location = intent.getStringExtra(EXTRA_CALENDAREVENT_LOCATION);
                 mDeviceSupport.onAddCalendarEvent(calendarEventSpec);
                 break;
             }
@@ -401,7 +404,7 @@ public class DeviceCommunicationService extends Service implements SharedPrefere
             case ACTION_DISCONNECT: {
                 mDeviceSupport.dispose();
                 if (mGBDevice != null && mGBDevice.getState() == GBDevice.State.WAITING_FOR_RECONNECT) {
-                    setReceiversEnableState(false);
+                    setReceiversEnableState(false, false, null);
                     mGBDevice.setState(GBDevice.State.NOT_CONNECTED);
                     mGBDevice.sendDeviceUpdateIntent(this);
                 }
@@ -579,8 +582,34 @@ public class DeviceCommunicationService extends Service implements SharedPrefere
     }
 
 
-    private void setReceiversEnableState(boolean enable) {
+    private void setReceiversEnableState(boolean enable, boolean initialized, DeviceCoordinator coordinator) {
         LOG.info("Setting broadcast receivers to: " + enable);
+
+        if (enable && initialized && coordinator != null && coordinator.supportsCalendarEvents()) {
+            if (mCalendarReceiver == null  && getPrefs().getBoolean("enable_calendar_sync", true)) {
+                if (!(GBApplication.isRunningMarshmallowOrLater() && ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CALENDAR) == PackageManager.PERMISSION_DENIED)) {
+                    IntentFilter calendarIntentFilter = new IntentFilter();
+                    calendarIntentFilter.addAction("android.intent.action.PROVIDER_CHANGED");
+                    calendarIntentFilter.addDataScheme("content");
+                    calendarIntentFilter.addDataAuthority("com.android.calendar", null);
+                    mCalendarReceiver = new CalendarReceiver(mGBDevice);
+                    registerReceiver(mCalendarReceiver, calendarIntentFilter);
+                }
+            }
+            if (mAlarmReceiver == null) {
+                mAlarmReceiver = new AlarmReceiver();
+                registerReceiver(mAlarmReceiver, new IntentFilter("DAILY_ALARM"));
+            }
+        } else {
+            if (mCalendarReceiver != null) {
+                unregisterReceiver(mCalendarReceiver);
+                mCalendarReceiver = null;
+            }
+            if (mAlarmReceiver != null) {
+                unregisterReceiver(mAlarmReceiver);
+                mAlarmReceiver = null;
+            }
+        }
 
         if (enable) {
             if (mPhoneCallReceiver == null) {
@@ -617,9 +646,9 @@ public class DeviceCommunicationService extends Service implements SharedPrefere
                 mBlueToothConnectReceiver = new BluetoothConnectReceiver(this);
                 registerReceiver(mBlueToothConnectReceiver, new IntentFilter(BluetoothDevice.ACTION_ACL_CONNECTED));
             }
-            if (mAlarmReceiver == null) {
-                mAlarmReceiver = new AlarmReceiver();
-                registerReceiver(mAlarmReceiver, new IntentFilter("DAILY_ALARM"));
+            if (mBlueToothPairingRequestReceiver == null) {
+                mBlueToothPairingRequestReceiver = new BluetoothPairingRequestReceiver(this);
+                registerReceiver(mBlueToothPairingRequestReceiver, new IntentFilter(BluetoothDevice.ACTION_PAIRING_REQUEST));
             }
             if (mAlarmClockReceiver == null) {
                 mAlarmClockReceiver = new AlarmClockReceiver();
@@ -653,9 +682,10 @@ public class DeviceCommunicationService extends Service implements SharedPrefere
                 unregisterReceiver(mBlueToothConnectReceiver);
                 mBlueToothConnectReceiver = null;
             }
-            if (mAlarmReceiver != null) {
-                unregisterReceiver(mAlarmReceiver);
-                mAlarmReceiver = null;
+
+            if (mBlueToothPairingRequestReceiver != null) {
+                unregisterReceiver(mBlueToothPairingRequestReceiver);
+                mBlueToothPairingRequestReceiver = null;
             }
             if (mAlarmClockReceiver != null) {
                 unregisterReceiver(mAlarmClockReceiver);
@@ -674,7 +704,7 @@ public class DeviceCommunicationService extends Service implements SharedPrefere
         super.onDestroy();
 
         LocalBroadcastManager.getInstance(this).unregisterReceiver(mReceiver);
-        setReceiversEnableState(false); // disable BroadcastReceivers
+        setReceiversEnableState(false, false, null); // disable BroadcastReceivers
 
         setDeviceSupport(null);
         NotificationManager nm = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);

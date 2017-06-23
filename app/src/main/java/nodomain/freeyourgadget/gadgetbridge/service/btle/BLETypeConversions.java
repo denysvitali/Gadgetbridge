@@ -1,10 +1,29 @@
+/*  Copyright (C) 2016-2017 Carsten Pfeiffer
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge.service.btle;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.TimeZone;
 
 import nodomain.freeyourgadget.gadgetbridge.devices.miband.MiBandCoordinator;
+import nodomain.freeyourgadget.gadgetbridge.model.NotificationType;
+import nodomain.freeyourgadget.gadgetbridge.service.btle.profiles.alertnotification.AlertCategory;
 
 /**
  * Provides methods to convert standard BLE units to byte sequences and vice versa.
@@ -232,5 +251,34 @@ public class BLETypeConversions {
             return fromUint8(255); // unknown
         }
         return 0;
+    }
+
+    public static byte[] toUtf8s(String message) {
+        return message.getBytes(StandardCharsets.UTF_8);
+    }
+
+    public static AlertCategory toAlertCategory(NotificationType type) {
+        switch (type) {
+            case GENERIC_ALARM_CLOCK:
+                return AlertCategory.HighPriorityAlert;
+            case GENERIC_SMS:
+                return AlertCategory.SMS;
+            case GENERIC_EMAIL:
+                return AlertCategory.Email;
+            case GENERIC_NAVIGATION:
+                return AlertCategory.Simple;
+            case RIOT:
+            case SIGNAL:
+            case TELEGRAM:
+            case WHATSAPP:
+            case CONVERSATIONS:
+            case FACEBOOK:
+            case FACEBOOK_MESSENGER:
+            case TWITTER:
+                return AlertCategory.InstantMessage;
+            case UNKNOWN:
+                return AlertCategory.Simple;
+        }
+        return AlertCategory.Simple;
     }
 }

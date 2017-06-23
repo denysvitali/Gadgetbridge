@@ -1,10 +1,25 @@
+/*  Copyright (C) 2016-2017 Carsten Pfeiffer
+
+    This file is part of Gadgetbridge.
+
+    Gadgetbridge is free software: you can redistribute it and/or modify
+    it under the terms of the GNU Affero General Public License as published
+    by the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Gadgetbridge is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU Affero General Public License for more details.
+
+    You should have received a copy of the GNU Affero General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>. */
 package nodomain.freeyourgadget.gadgetbridge;
 
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 import nodomain.freeyourgadget.gadgetbridge.database.DBHandler;
-import nodomain.freeyourgadget.gadgetbridge.database.DBOpenHelper;
 import nodomain.freeyourgadget.gadgetbridge.entities.DaoMaster;
 import nodomain.freeyourgadget.gadgetbridge.entities.DaoSession;
 
@@ -20,7 +35,7 @@ public class LockHandler implements DBHandler {
     public LockHandler() {
     }
 
-    public void init(DaoMaster daoMaster, DBOpenHelper helper) {
+    public void init(DaoMaster daoMaster, DaoMaster.OpenHelper helper) {
         if (isValid()) {
             throw new IllegalStateException("DB must be closed before initializing it again");
         }
@@ -66,7 +81,7 @@ public class LockHandler implements DBHandler {
             throw new IllegalStateException("session must be null");
         }
         // this will create completely new db instances and in turn update this handler through #init()
-        GBApplication.setupDatabase(GBApplication.getContext());
+        GBApplication.app().setupDatabase();
     }
 
     @Override
